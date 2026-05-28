@@ -1,14 +1,16 @@
-﻿@{
+﻿@model WorkInstructionViewModel
+
+@{
     ViewData["Title"] = "Work Instructions";
 }
 
 <!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="min-h-screen bg-[#ECFFEC]">
+<div class="min-h-screen flex flex-col">
 
     <!-- HERO SECTION -->
-    <section class="bg-[#1C3667] text-white relative overflow-hidden">
+    <section class=" bg-[#1C3667] text-white relative overflow-hidden">
         <div class="max-w-7xl mx-auto px-6 py-10">
 
             <div class="max-w-xl pl-20">
@@ -46,5 +48,81 @@
 
         </div>
     </section>
+
+    <div class="bg-[#DDF0DD] text-white shadow-md py-3">
+        <div class="max-w-7xl mx-auto px-4 flex items-center justify-between">
+
+            <div class="text-sm">Menu Section</div>
+
+        </div>
+    </div>
+
+    
+
+    <!-- BODY SECTION -->
+    <div class="bg-[#EEF4EE] shadow-md py-20 min-h-screen">
+        <div class="max-w-7xl mx-auto px-6 pl-20">
+
+            <!-- Large Cards Row -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+                @foreach (var item in Model.FeaturedCards)
+                {
+                    <a href="@item.Url"
+                       class="bg-white rounded-xl p-5 hover:shadow-md transition cursor-pointer flex flex-col"
+                       style="border: 1px solid #e5e7eb; border-top: 4px solid #1C3667;">
+
+                        <!-- Icon -->
+                        <div class="w-9 h-9 rounded-lg bg-[#DDF0DD] flex items-center justify-center mb-3">
+                            <i class="@item.IconClass text-[#1C3667] text-lg"></i>
+                        </div>
+
+                        <!-- Title & description -->
+                        <p class="font-bold text-[#1C3667] text-sm leading-snug mb-1">@item.Title</p>
+                        <p class="text-xs text-gray-400 leading-relaxed flex-1">@item.Subtitle</p>
+
+                        <!-- Footer: status badge + date -->
+                        <div class="mt-4 pt-3 flex items-center justify-between"
+                             style="border-top: 0.5px solid #F3F4F6;">
+
+                            @{
+                                var badgeClass = item.StatusColor switch
+                                {
+                                    "updated" => "bg-green-100 text-green-800",
+                                    "review" => "bg-yellow-100 text-yellow-800",
+                                    _ => "bg-blue-100 text-blue-800"
+                                };
+                            }
+                            <span class="text-[10px] font-semibold px-3 py-1 rounded-full @badgeClass">
+                                @item.Status
+                            </span>
+                            <span class="text-[10px] text-gray-300">@item.LastUpdated</span>
+                        </div>
+                    </a>
+                }
+            </div>
+
+            <!-- Small Cards Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach (var item in Model.SecondaryCards)
+                {
+                    <a href="@item.Url"
+                       class="bg-white rounded-xl p-4 hover:shadow-md transition cursor-pointer"
+                       style="border: 1px solid #e5e7eb; border-left: 4px solid #1C3667;">
+
+                        <!-- Icon -->
+                        <div class="w-7 h-7 rounded-md bg-[#DDF0DD] flex items-center justify-center mb-2">
+                            <i class="@item.IconClass text-[#1C3667] text-sm"></i>
+                        </div>
+
+                        <p class="font-bold text-[#1C3667] text-xs mb-1">@item.Title</p>
+                        <p class="text-[11px] text-gray-400">@item.Subtitle</p>
+
+                    </a>
+                }
+            </div>
+
+        </div>
+    </div>
+
 
 </div>

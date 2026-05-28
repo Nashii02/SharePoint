@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Sharepoint.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@latest/tabler-icons.min.css" />
 </head>
 <body>
     <header>
@@ -43,11 +45,6 @@
             <div class=" max-w-7xl mx-auto flex items-center justify-between px-4">
 
                 <div class="flex gap-4 pl-20">
-
-                    <a asp-controller="Home" asp-action="Index"
-                       class="px-6 py-2 rounded-md font-bold @IsActive("Home", "Index")">
-                        Home
-                    </a>
 
                     <a asp-controller="Home" asp-action="WorkInstruction"
                        class="px-6 py-2 rounded-md font-bold @IsActive("Home", "WorkInstruction")">
@@ -84,9 +81,15 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Sharepoint - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top footer text-muted bg-[#1C3667]">
+        <div class="container ">
+            <div class="flex items-center gap-3">
+                <img src="~/images/ITLogo.png" width="35" height="35" />
+
+                <h1 class="text-sm font-bold text-white">
+                    IT SOLUTIONS
+                </h1>
+            </div>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

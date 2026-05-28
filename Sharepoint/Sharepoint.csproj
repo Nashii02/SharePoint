@@ -14,7 +14,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Views\Home\ONEHRMS.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Views\Home\ONEHRMS.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspose.Words" Version="26.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.84.1" />
   </ItemGroup>
 
 </Project>

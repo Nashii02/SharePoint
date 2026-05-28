@@ -1,0 +1,341 @@
+﻿
+
+@model ModulePageViewModel
+
+@{
+    ViewData["Title"] = Model.ModuleTitle;
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<div class="min-h-screen flex flex-col">
+
+    <!-- HERO -->
+    <section class="bg-[#1C3667] text-white">
+        <div class="max-w-7xl mx-auto px-6 py-10 pl-20">
+            <a href="/Home/WorkInstruction"
+               class="text-xs text-blue-200 hover:text-white mb-3 inline-flex items-center gap-1">
+                <i class="fa-solid fa-arrow-left text-[10px]"></i> Back to Work Instructions
+            </a>
+            <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">
+                @Model.ModuleTitle.ToUpper()
+            </h1>
+            <p class="text-blue-200 text-sm mt-2">@Model.ModuleSubtitle</p>
+        </div>
+    </section>
+
+    <!-- BODY -->
+    <div class="bg-[#EEF4EE] flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6 pl-20">
+
+            <div class="flex gap-6 items-start">
+
+                <!-- LEFT: File List -->
+                <div class="flex-1 bg-white rounded-xl shadow-sm overflow-hidden"
+                     style="border: 1px solid #e5e7eb;">
+
+                    <!-- List Header -->
+                    <div class="px-5 py-4 flex items-center justify-between"
+                         style="border-bottom: 1px solid #F3F4F6;">
+                        <p class="text-sm font-bold text-[#1C3667]">Files</p>
+                        <span class="text-xs text-gray-400">@Model.Files.Count file(s)</span>
+                    </div>
+
+                    <!-- File Rows -->
+                    @if (Model.Files.Any())
+                    {
+                        <ul class="divide-y divide-gray-50">
+                            @foreach (var file in Model.Files)
+                            {
+                                var (iconClass, iconColor) = file.FileType.ToLower() switch
+                                {
+                                    "pdf" => ("fa-solid fa-file-pdf", "text-red-400"),
+                                    "docx" => ("fa-solid fa-file-word", "text-blue-400"),
+                                    "xlsx" => ("fa-solid fa-file-excel", "text-green-500"),
+                                    "pptx" => ("fa-solid fa-file-powerpoint", "text-orange-400"),
+                                    _ => ("fa-solid fa-file", "text-gray-400")
+                                };
+
+                                <li>
+                                    <div class="flex items-center gap-4 px-5 py-4 hover:bg-[#F7FBF7] transition">
+
+                                        <!-- File icon -->
+                                        <div class="w-9 h-9 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
+                                            <i class="@iconClass @iconColor text-base"></i>
+                                        </div>
+
+                                        <!-- File info -->
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-[#1C3667] truncate">
+                                                @file.FileName
+                                            </p>
+                                            <p class="text-[11px] text-gray-400 mt-0.5">
+                                                Uploaded by @file.UploadedBy · @file.UploadedDate
+                                            </p>
+                                        </div>
+
+                                        <!-- File type badge -->
+                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
+                                            @file.FileType
+                                        </span>
+
+                                        <!-- Download icon -->
+                                        <a href="@file.Url" download
+                                           class="fa-solid fa-download text-gray-300 hover:text-[#1C3667] text-sm flex-shrink-0 transition"></a>
+
+                                        <!-- Eye / Preview icon -->
+                                        <button type="button"
+                                                onclick="openPreview('@file.Url', '@file.FileName', '@file.FileType')"
+                                                class="fa-solid fa-eye text-gray-300 hover:text-[#1C3667] text-sm flex-shrink-0 transition">
+                                        </button>
+
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="px-5 py-12 text-center text-gray-400 text-sm">
+                            <i class="fa-solid fa-folder-open text-3xl mb-3 block text-gray-200"></i>
+                            No files uploaded yet.
+                        </div>
+                    }
+                </div>
+
+                <!-- RIGHT: Upload Panel -->
+                <div class="w-64 flex-shrink-0 flex flex-col gap-4">
+
+                    <form method="post" action="/Home/UploadFile" enctype="multipart/form-data">
+
+                        <input type="hidden" name="moduleId" value="@Context.Request.Query["id"]" />
+
+                        <div class="bg-white rounded-xl p-5 shadow-sm text-center"
+                             style="border: 1px solid #e5e7eb; border-top: 4px solid #1C3667;">
+
+                            <i class="fa-solid fa-cloud-arrow-up text-[#1C3667] text-3xl mb-3 block"></i>
+                            <p class="text-sm font-bold text-[#1C3667] mb-1">Upload File</p>
+                            <p class="text-[11px] text-gray-400 mb-4">PDF, DOCX, XLSX supported</p>
+
+                            <label class="cursor-pointer inline-block w-full bg-gray-100 text-[#1C3667] text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-200 transition mb-2">
+                                <i class="fa-solid fa-paperclip mr-1"></i> Choose File
+                                <input type="file" name="file" class="hidden" accept=".pdf,.docx,.xlsx,.pptx"
+                                       onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'No file chosen'" />
+                            </label>
+
+                            <p id="file-name" class="text-[10px] text-gray-400 mb-3 truncate">No file chosen</p>
+
+                            <button type="submit"
+                                    class="w-full bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition">
+                                <i class="fa-solid fa-upload mr-1"></i> Upload
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                    <!-- Module Info -->
+                    <div class="bg-white rounded-xl p-4 shadow-sm"
+                         style="border: 1px solid #e5e7eb;">
+                        <p class="text-xs font-bold text-[#1C3667] mb-3">Module Info</p>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-[10px] text-gray-400">Module</p>
+                                <p class="text-xs font-semibold text-gray-700">@Model.ModuleTitle</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400">Total Files</p>
+                                <p class="text-xs font-semibold text-gray-700">@Model.Files.Count</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- END RIGHT -->
+
+            </div>
+            <!-- END flex -->
+
+        </div>
+    </div>
+    <!-- END BODY -->
+
+</div>
+<!-- END min-h-screen -->
+<!-- ===================== FILE PREVIEW MODAL ===================== -->
+<!-- Moved OUTSIDE all page divs so it overlays everything correctly -->
+<div id="preview-modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center"
+     style="background: rgba(0,0,0,0.5); display:none;">
+
+    <div class="bg-white rounded-xl shadow-xl flex flex-col"
+         style="width: 90vw; height: 90vh;">
+
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-file text-[#1C3667]"></i>
+                <p id="preview-title" class="text-sm font-bold text-[#1C3667]"></p>
+            </div>
+            <button onclick="closePreview()"
+                    class="text-gray-400 hover:text-gray-600 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="flex-1 overflow-hidden rounded-b-xl">
+
+            <!-- PDF / image viewer -->
+            <iframe id="preview-frame" src="" class="w-full h-full border-0" style="display:none;"></iframe>
+
+            <!-- DOCX viewer -->
+            <div id="preview-doc" class="w-full h-full overflow-auto" style="display:none;"></div>
+
+            <!-- XLSX viewer -->
+            <div id="preview-sheet" class="w-full h-full overflow-auto" style="display:none;"></div>
+
+            <!-- Unsupported fallback -->
+            <div id="preview-fallback"
+                 class="w-full h-full flex flex-col items-center justify-center text-gray-400"
+                 style="display:none;">
+                <i class="fa-solid fa-file-circle-question text-5xl mb-4 text-gray-200"></i>
+                <p class="text-sm font-semibold text-gray-500 mb-1">Preview not available</p>
+                <p class="text-xs text-gray-400 mb-4">This file type cannot be previewed in the browser.</p>
+                <a id="fallback-download" href="#"
+                   class="bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition">
+                    <i class="fa-solid fa-download mr-1"></i> Download Instead
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function openPreview(url, fileName, fileType) {
+        document.getElementById('preview-title').textContent = fileName;
+
+        const frame       = document.getElementById('preview-frame');
+        const fallback    = document.getElementById('preview-fallback');
+        const modal       = document.getElementById('preview-modal');
+        const docViewer   = document.getElementById('preview-doc');
+        const sheetViewer = document.getElementById('preview-sheet');
+
+        // Hide all viewers first
+        frame.style.display       = 'none';
+        fallback.style.display    = 'none';
+        docViewer.style.display   = 'none';
+        sheetViewer.style.display = 'none';
+        frame.src = '';
+
+        const type = fileType.toLowerCase();
+
+        if (['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(type)) {
+            frame.src = url;
+            frame.style.display = 'block';
+
+        } else if (type === 'docx') {
+            docViewer.innerHTML = '<p class="text-gray-400 text-sm p-6">Loading...</p>';
+            docViewer.style.display = 'block';
+
+            fetch(url)
+                .then(r => r.arrayBuffer())
+                .then(buffer => mammoth.convertToHtml({ arrayBuffer: buffer }))
+                .then(result => {
+                    docViewer.innerHTML = `
+                        <div style="padding:2rem; font-size:0.875rem; color:#374151; line-height:1.75;">
+                            ${result.value}
+                        </div>`;
+                })
+                .catch(() => {
+                    docViewer.innerHTML = '<p class="text-red-400 text-sm p-6">Failed to load document.</p>';
+                });
+
+        } else if (['xlsx', 'xls'].includes(type)) {
+            sheetViewer.innerHTML = '<p class="text-gray-400 text-sm p-6">Loading...</p>';
+            sheetViewer.style.display = 'block';
+
+            fetch(url)
+                .then(r => r.arrayBuffer())
+                .then(buffer => {
+                    const workbook  = XLSX.read(buffer, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const html      = XLSX.utils.sheet_to_html(workbook.Sheets[sheetName]);
+                    sheetViewer.innerHTML = `
+                        <div style="padding:1rem; overflow:auto; height:100%; font-size:0.75rem;">
+                            <style>
+                                #preview-sheet table { border-collapse: collapse; width: 100%; }
+                                #preview-sheet td, #preview-sheet th { border: 1px solid #e5e7eb; padding: 6px 10px; white-space: nowrap; }
+                                #preview-sheet tr:nth-child(even) { background: #f9fafb; }
+                                #preview-sheet tr:first-child td { background: #1C3667; color: white; font-weight: bold; }
+                            </style>
+                            ${html}
+                        </div>`;
+                })
+                .catch(() => {
+                    sheetViewer.innerHTML = '<p class="text-red-400 text-sm p-6">Failed to load spreadsheet.</p>';
+                });
+
+        } else {
+            document.getElementById('fallback-download').href = url;
+            fallback.style.display = 'flex';
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreview() {
+        document.getElementById('preview-modal').style.display = 'none';
+        document.getElementById('preview-frame').src = '';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('preview-modal').addEventListener('click', function (e) {
+        if (e.target === this) closePreview();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closePreview();
+    });
+
+        function openPreview(url, fileName, fileType) {
+        document.getElementById('preview-title').textContent = fileName;
+
+        const frame       = document.getElementById('preview-frame');
+        const fallback    = document.getElementById('preview-fallback');
+        const modal       = document.getElementById('preview-modal');
+        const docViewer   = document.getElementById('preview-doc');
+        const sheetViewer = document.getElementById('preview-sheet');
+
+        // Hide all viewers
+        frame.style.display       = 'none';
+        fallback.style.display    = 'none';
+        docViewer.style.display   = 'none';
+        sheetViewer.style.display = 'none';
+        frame.src = '';
+
+        const type = fileType.toLowerCase();
+        const unsupported = ['zip', 'rar', 'mp4', 'mp3'];
+
+        if (unsupported.includes(type)) {
+            document.getElementById('fallback-download').href = url;
+            fallback.style.display = 'flex';
+        } else {
+            // Build preview URL — server converts to PDF if needed
+            const segments   = url.split('/');          // /uploads/bdgt/file.docx
+            const moduleId   = segments[2];
+            const name       = segments[3];
+            frame.src        = `/Home/PreviewFile?moduleId=${moduleId}&fileName=${name}`;
+            frame.style.display = 'block';
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+</script>
