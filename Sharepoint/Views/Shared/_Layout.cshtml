@@ -43,23 +43,16 @@
             <div class=" max-w-7xl mx-auto flex items-center justify-between px-4">
 
                 <div class="flex gap-4 pl-20">
-
-                    <a asp-controller="Home" asp-action="Index"
-                       class="px-6 py-2 rounded-md font-bold @IsActive("Home", "Index")">
-                        Home
-                    </a>
-
                     <a asp-controller="Home" asp-action="WorkInstruction"
                        class="px-6 py-2 rounded-md font-bold @IsActive("Home", "WorkInstruction")">
                         Work Instructions
                     </a>
-
                 </div>
 
                 <!-- SEARCH BAR -->
                 <div class="hidden md:flex items-center bg-[#1C3667] rounded-lg px-3 py-2 w-80">
                     <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5 text-[#DDF0DD]"
+                         class="h-5 w-5 text-white"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor">
@@ -71,8 +64,10 @@
                     </svg>
 
                     <input type="text"
-                           placeholder="Search..."
-                           class="w-full outline-none bg-[#1C3667] px-2 text-white" placeholder-[#1C3667] />
+                           id="global-search"
+                           placeholder="Search modules..."
+                           oninput="searchModules(this.value)"
+                           class="w-full outline-none bg-[#1C3667] px-2 text-white placeholder-white" />
                 </div>
             </div>
         </div>
@@ -84,7 +79,7 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted bg-[#1C3667]">
         <div class="container">
             &copy; 2026 - Sharepoint - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>

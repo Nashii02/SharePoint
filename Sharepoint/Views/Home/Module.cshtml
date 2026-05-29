@@ -1,0 +1,432 @@
+﻿@model ModulePageViewModel
+
+@{
+    ViewData["Title"] = Model.ModuleTitle;
+    Layout = null;
+}
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<div class="min-h-screen flex flex-col">
+
+    <!-- HERO -->
+    <section class="bg-[#1C3667] text-white">
+        <div class="max-w-7xl mx-auto px-6 py-10 pl-20">
+            <!-- Breadcrumb -->
+            <nav class="mb-3 inline-flex items-center gap-2 text-xs">
+                <a href="/Home/WorkInstruction"
+                   class="text-blue-200 hover:text-white transition flex items-center gap-1">
+                    <i class="fa-solid fa-house text-[10px]"></i>
+                    Work Instructions
+                </a>
+                <i class="fa-solid fa-chevron-right text-[9px] text-blue-400"></i>
+                <span class="text-white font-semibold">@Model.ModuleTitle</span>
+            </nav>
+            <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">
+                @Model.ModuleTitle.ToUpper()
+            </h1>
+            <p class="text-blue-200 text-sm mt-2">@Model.ModuleSubtitle</p>
+        </div>
+    </section>
+
+    <!-- BODY -->
+    <div class="bg-[#EEF4EE] flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6 pl-20">
+            <div class="flex gap-6 items-start">
+
+                <!-- LEFT: File List -->
+                <!-- LEFT: File List -->
+                <div class="flex-1 bg-white rounded-xl shadow-sm overflow-hidden"
+                     style="border: 1px solid #e5e7eb;">
+
+                    <div class="px-5 py-4 flex items-center justify-between"
+                         style="border-bottom: 1px solid #F3F4F6;">
+                    <p class="text-sm font-bold text-[#1C3667]">Files</p>
+
+                    <div class="flex items-center gap-3">
+                        <!-- Search input -->
+                        <div class="flex items-center bg-gray-50 rounded-lg px-3 py-1.5 gap-2"
+                             style="border: 1px solid #e5e7eb;">
+                            <i class="fa-solid fa-magnifying-glass text-gray-300 text-xs"></i>
+                            <input type="text"
+                                   id="file-search"
+                                   placeholder="Search files..."
+                                   oninput="searchFiles(this.value)"
+                                   class="text-xs text-gray-600 bg-transparent outline-none w-36" />
+                        </  div>
+
+                        <span id="file-count" class="text-xs text-gray-400">@Model.Files.Count file(s)</span>
+                    </div>
+                </div>
+
+                @if (Model.Files.Any())
+                {
+                    var fileGroups = Model.Files
+                    .GroupBy(f => f.OriginalFileName ?? f.FileName)
+                    .Select(g => new
+                    {
+                        Latest = g.OrderByDescending(f => f.Version).First(),
+                        History = g.OrderByDescending(f => f.Version).Skip(1).ToList()
+                    }).ToList();
+                        
+
+                    <div id="no-files-found" style="display:none;"
+                         class="px-5 py-10 text-center text-gray-400 text-sm">
+                        <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block text-gray-200"></i>
+                        No files match your search.
+                    </div>
+                    <ul id="file-list" class="divide-y divide-gray-50">
+                            @foreach (var group in fileGroups)
+                            {
+                                var file = group.Latest;
+                                var (iconClass, iconColor) = file.FileType.ToLower() switch
+                                {
+                                    "pdf"  => ("fa-solid fa-file-pdf",        "text-red-400"),
+                                    "docx" => ("fa-solid fa-file-word",       "text-blue-400"),
+                                    "xlsx" => ("fa-solid fa-file-excel",      "text-green-500"),
+                                    "pptx" => ("fa-solid fa-file-powerpoint", "text-orange-400"),
+                                    _      => ("fa-solid fa-file",            "text-gray-400")
+                                };
+
+                            <li data-filename="@file.FileName.ToLower() @file.FileType.ToLower() @file.Description?.ToLower()">
+                                    <!-- Latest version row -->
+                                    <div class="flex items-center gap-4 px-5 py-4 hover:bg-[#F7FBF7] transition">
+
+                                        <div class="w-9 h-9 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
+                                            <i class="@iconClass @iconColor text-base"></i>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-sm font-semibold text-[#1C3667] truncate">
+                                                    @(file.OriginalFileName ?? file.FileName)
+                                                </p>
+                                                <!-- Version badge -->
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1C3667] text-white flex-shrink-0">
+                                                    v@file.Version
+                                                </span>
+                                                @if (group.History.Any())
+                                                {
+                                                    <!-- Toggle history button -->
+                                                    <button type="button"
+                                                            onclick="toggleHistory('history-@file.Id')"
+                                                            class="text-[9px] text-gray-400 hover:text-[#1C3667] underline flex-shrink-0">
+                                                        @group.History.Count older version(s)
+                                                    </button>
+                                                }
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(file.Description))
+                                            {
+                                                <p class="text-[11px] text-gray-500 mt-0.5">@file.Description</p>
+                                            }
+
+                                            <div class="flex items-center gap-3 mt-1">
+                                                <span class="text-[10px] text-gray-400">
+                                                    <i class="fa-solid fa-user text-[9px] mr-1"></i>@file.UploadedBy
+                                                </span>
+                                                <span class="text-[10px] text-gray-400">
+                                                    <i class="fa-solid fa-calendar text-[9px] mr-1"></i>@file.UploadedDateFormatted
+                                                </span>
+                                                @if (!string.IsNullOrEmpty(file.FileSize))
+                                                {
+                                                    <span class="text-[10px] text-gray-400">
+                                                        <i class="fa-solid fa-weight-hanging text-[9px] mr-1"></i>@file.FileSize
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
+                                            @file.FileType
+                                        </span>
+
+                                        <a href="@file.FileUrl" download
+                                           class="fa-solid fa-download text-gray-300 hover:text-[#1C3667] text-sm flex-shrink-0 transition"></a>
+
+                                        <button type="button"
+                                                onclick="openPreview('@file.FileUrl', '@file.FileName', '@file.FileType')"
+                                                class="fa-solid fa-eye text-gray-300 hover:text-[#1C3667] text-sm flex-shrink-0 transition">
+                                        </button>
+
+                                        <form method="post" action="/Home/DeleteFile" style="display:inline;">
+                                            <input type="hidden" name="fileId"   value="@file.Id" />
+                                            <input type="hidden" name="moduleId" value="@Context.Request.Query["id"]" />
+                                            <button type="submit"
+                                                    onclick="return confirm('Delete this file?')"
+                                                    class="fa-solid fa-trash text-gray-300 hover:text-red-400 text-sm flex-shrink-0 transition">
+                                            </button>
+                                        </form>
+
+                                    </div>
+
+                                    <!-- Version history rows (hidden by default) -->
+                                    @if (group.History.Any())
+                                    {
+                                        <div id="history-@file.Id" style="display:none;">
+                                            @foreach (var old in group.History)
+                                            {
+                                                <div class="flex items-center gap-4 px-5 py-3 bg-gray-50"
+                                                     style="border-left: 3px solid #e5e7eb;">
+
+                                                    <div class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                        <i class="@iconClass @iconColor text-xs"></i>
+                                                    </div>
+
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex items-center gap-2">
+                                                            <p class="text-xs text-gray-500 truncate">
+                                                                @(old.OriginalFileName ?? old.FileName)
+                                                            </p>
+                                                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
+                                                                v@old.Version
+                                                            </span>
+                                                        </div>
+                                                        <p class="text-[10px] text-gray-400 mt-0.5">
+                                                            @old.UploadedBy · @old.UploadedDateFormatted · @old.FileSize
+                                                        </p>
+                                                    </div>
+
+                                                    <a href="@old.FileUrl" download
+                                                       class="fa-solid fa-download text-gray-300 hover:text-[#1C3667] text-xs flex-shrink-0 transition"></a>
+
+                                                    <form method="post" action="/Home/DeleteFile" style="display:inline;">
+                                                        <input type="hidden" name="fileId"   value="@old.Id" />
+                                                        <input type="hidden" name="moduleId" value="@Context.Request.Query["id"]" />
+                                                        <button type="submit"
+                                                                onclick="return confirm('Delete this version?')"
+                                                                class="fa-solid fa-trash text-gray-300 hover:text-red-400 text-xs flex-shrink-0 transition">
+                                                        </button>
+                                                    </form>
+
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="px-5 py-12 text-center text-gray-400 text-sm">
+                            <i class="fa-solid fa-folder-open text-3xl mb-3 block text-gray-200"></i>
+                            No files uploaded yet.
+                        </div>
+                    }
+                </div>
+                </div>
+
+                <!-- RIGHT: Upload Panel -->
+                <div class="w-64 flex-shrink-0 flex flex-col gap-4">
+
+                    <form method="post" action="/Home/UploadFile" enctype="multipart/form-data">
+                        <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+
+                        <div class="bg-white rounded-xl p-5 shadow-sm"
+                             style="border: 1px solid #e5e7eb; border-top: 4px solid #1C3667;">
+
+                            <i class="fa-solid fa-cloud-arrow-up text-[#1C3667] text-3xl mb-3 block text-center"></i>
+                            <p class="text-sm font-bold text-[#1C3667] mb-1 text-center">Upload File</p>
+                            <p class="text-[11px] text-gray-400 mb-4 text-center">PDF, DOCX, XLSX supported</p>
+
+                            <!-- File picker -->
+                            <label class="cursor-pointer inline-block w-full bg-gray-100 text-[#1C3667] text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-200 transition mb-2 text-center">
+                                <i class="fa-solid fa-paperclip mr-1"></i> Choose File
+                                <input type="file" name="file" id="file-input" class="hidden"
+                                       accept=".pdf,.docx,.xlsx,.pptx"
+                                       onchange="onFileSelected(this)" />
+                            </label>
+
+                            <!-- File info preview (shown after file is chosen) -->
+                        <div id="file-info" style="display:none; border: 1px solid #f3f4f6;"
+                             class="bg-gray-50 rounded-lg p-3 mb-3 text-left">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i id="file-info-icon" class="fa-solid fa-file text-gray-400 text-sm"></i>
+                                    <p id="file-info-name" class="text-xs font-semibold text-[#1C3667] truncate"></p>
+                                </div>
+                                <p id="file-info-size" class="text-[10px] text-gray-400"></p>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-3">
+                                <label class="text-[11px] font-semibold text-[#1C3667] block mb-1">
+                                    Description <span class="text-gray-300 font-normal">(optional)</span>
+                                </label>
+                                <textarea name="description" rows="3"
+                                          placeholder="What is this file about?"
+                                          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 resize-none focus:outline-none focus:border-[#1C3667]"></textarea>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit"
+                                    class="w-full bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition">
+                                <i class="fa-solid fa-upload mr-1"></i> Upload
+                            </button>
+
+                        </div>
+                    </form>
+
+                    <!-- Module Info -->
+                    <div class="bg-white rounded-xl p-4 shadow-sm" style="border: 1px solid #e5e7eb;">
+                        <p class="text-xs font-bold text-[#1C3667] mb-3">Module Info</p>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-[10px] text-gray-400">Module</p>
+                                <p class="text-xs font-semibold text-gray-700">@Model.ModuleTitle</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400">Total Files</p>
+                                <p class="text-xs font-semibold text-gray-700">@Model.Files.Count</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+<!-- PREVIEW MODAL -->
+<div id="preview-modal"
+     class="fixed inset-0 z-50 items-center justify-center"
+     style="background: rgba(0,0,0,0.5); display:none;">
+
+    <div class="bg-white rounded-xl shadow-xl flex flex-col" style="width: 90vw; height: 90vh;">
+
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-file text-[#1C3667]"></i>
+                <p id="preview-title" class="text-sm font-bold text-[#1C3667]"></p>
+            </div>
+            <button onclick="closePreview()" class="text-gray-400 hover:text-gray-600 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-hidden rounded-b-xl">
+            <iframe id="preview-frame" src="" class="w-full h-full border-0" style="display:none;"></iframe>
+            <div id="preview-fallback"
+                 class="w-full h-full flex flex-col items-center justify-center text-gray-400"
+                 style="display:none;">
+                <i class="fa-solid fa-file-circle-question text-5xl mb-4 text-gray-200"></i>
+                <p class="text-sm font-semibold text-gray-500 mb-1">Preview not available</p>
+                <a id="fallback-download" href="#"
+                   class="bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition mt-3">
+                    <i class="fa-solid fa-download mr-1"></i> Download Instead
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<script>
+        function openPreview(url, fileName, fileType) {
+        document.getElementById('preview-title').textContent = fileName;
+
+        const frame    = document.getElementById('preview-frame');
+        const fallback = document.getElementById('preview-fallback');
+        const modal    = document.getElementById('preview-modal');
+
+        frame.style.display    = 'none';
+        fallback.style.display = 'none';
+        frame.src = '';
+
+        const type = fileType.toLowerCase();
+        const downloadOnly = ['zip', 'rar', 'mp4', 'mp3', 'xlsx', 'xls', 'pptx', 'ppt'];
+
+        if (downloadOnly.includes(type)) {
+            document.getElementById('fallback-download').href = url;
+            fallback.style.display = 'flex';
+        } else {
+            const segments = url.split('/');
+            const moduleId = segments[2];
+            const name     = segments[3];
+            frame.src      = `/Home/PreviewFile?moduleId=${moduleId}&fileName=${encodeURIComponent(name)}`;
+            frame.style.display = 'block';
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreview() {
+        document.getElementById('preview-modal').style.display = 'none';
+        document.getElementById('preview-frame').src = '';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('preview-modal').addEventListener('click', function (e) {
+        if (e.target === this) closePreview();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closePreview();
+    });
+
+        function onFileSelected(input) {
+        const file     = input.files[0];
+        const infoBox  = document.getElementById('file-info');
+        const nameEl   = document.getElementById('file-info-name');
+        const sizeEl   = document.getElementById('file-info-size');
+        const iconEl   = document.getElementById('file-info-icon');
+
+        if (!file) { infoBox.style.display = 'none'; return; }
+
+        // Icon by type
+        const ext = file.name.split('.').pop().toLowerCase();
+        const iconMap = {
+            pdf:  'fa-solid fa-file-pdf text-red-400',
+            docx: 'fa-solid fa-file-word text-blue-400',
+            doc:  'fa-solid fa-file-word text-blue-400',
+            xlsx: 'fa-solid fa-file-excel text-green-500',
+            xls:  'fa-solid fa-file-excel text-green-500',
+            pptx: 'fa-solid fa-file-powerpoint text-orange-400',
+        };
+        iconEl.className = (iconMap[ext] || 'fa-solid fa-file text-gray-400') + ' text-sm';
+
+        // Human readable size
+        const bytes = file.size;
+        let size = '';
+        if      (bytes < 1024)              size = bytes + ' B';
+        else if (bytes < 1024 * 1024)       size = (bytes / 1024).toFixed(1) + ' KB';
+        else if (bytes < 1024 * 1024 * 1024) size = (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        else                                size = (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+
+        nameEl.textContent = file.name;
+        sizeEl.textContent = size;
+        infoBox.style.display = 'block';
+    }
+
+
+
+        function toggleHistory(id) {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+        function searchFiles(query) {
+        const q = query.toLowerCase().trim();
+        const items = document.querySelectorAll('#file-list li');
+        let visible = 0;
+
+        items.forEach(li => {
+            const text = li.getAttribute('data-filename') || '';
+            const show = text.includes(q);
+            li.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        // Update the file count
+        document.getElementById('file-count').textContent = visible + ' file(s)';
+
+        // Show empty message if nothing found
+        const empty = document.getElementById('no-files-found');
+        if (empty) empty.style.display = visible === 0 && q !== '' ? 'block' : 'none';
+    }
+</script>
