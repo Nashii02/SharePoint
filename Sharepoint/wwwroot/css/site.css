@@ -27,3 +27,102 @@ menu-link {
     color: #1C3667;
 }
 
+/* ?? Work Instruction Cards ?? */
+:root {
+    --wi-navy: #1a2f6e;
+    --wi-mint: #e8f5ee;
+    --wi-mint-border: #c8e6d4;
+    --wi-white: #ffffff;
+    --wi-text-sec: #4a5568;
+    --wi-shadow: 0 2px 8px rgba(26,47,110,0.10), 0 1px 2px rgba(26,47,110,0.06);
+    --wi-shadow-hover: 0 8px 24px rgba(26,47,110,0.16), 0 2px 6px rgba(26,47,110,0.10);
+    --wi-radius: 14px;
+    --wi-radius-icon: 10px;
+}
+
+.wi-cards-section {
+    padding: 40px 2rem 60px;
+}
+
+.wi-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.wi-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--wi-white);
+    border: 1.5px solid var(--wi-mint-border);
+    border-radius: var(--wi-radius);
+    padding: 22px 20px;
+    box-shadow: var(--wi-shadow);
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+    .wi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--wi-shadow-hover);
+        border-color: var(--wi-navy);
+    }
+
+        .wi-card:hover .wi-card-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+.wi-card-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: var(--wi-mint);
+    border-radius: var(--wi-radius-icon);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wi-navy);
+}
+
+    .wi-card-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+.wi-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.wi-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--wi-navy);
+    margin: 0 0 6px 0;
+}
+
+.wi-card-desc {
+    font-size: 13px;
+    color: var(--wi-text-sec);
+    line-height: 1.55;
+    margin: 0;
+}
+
+.wi-card-arrow {
+    flex-shrink: 0;
+    color: var(--wi-navy);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.2s, transform 0.2s;
+    margin-top: 2px;
+}
+
+    .wi-card-arrow svg {
+        width: 18px;
+        height: 18px;
+    }
+

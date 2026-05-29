@@ -1,16 +1,20 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Sharepoint.Data;
 using Sharepoint.Models;
+using System.Diagnostics;
 
 namespace Sharepoint.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly AppDbContext _db;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, AppDbContext db)
         {
             _logger = logger;
+            _db = db;
         }
 
         public IActionResult Index()
@@ -29,11 +33,14 @@ namespace Sharepoint.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        public IActionResult WorkInstruction()
+        public async Task<IActionResult> WorkInstruction()
         {
+            var categories = await _db.WorkCategories
+                .OrderBy(c => c.IsDefault ? 0 : 1)
+                .ThenBy(c => c.CreatedAt)
+                .ToListAsync();
+            ViewBag.Categories = categories;
             return View();
         }
-
-        
     }
 }
