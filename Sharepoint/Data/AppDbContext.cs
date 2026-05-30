@@ -7,7 +7,18 @@ namespace Sharepoint.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<WorkDocument> WorkDocuments { get; set; }
-        public DbSet<WorkCategory> WorkCategories { get; set; }
+        public DbSet<WorkCategory> WorkCategories => Set<WorkCategory>();
+        public DbSet<WorkDocument> WorkDocuments => Set<WorkDocument>();
+        public DbSet<AppUser> Users => Set<AppUser>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Unique username index
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
+        }
     }
 }
