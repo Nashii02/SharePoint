@@ -2,555 +2,714 @@
 
 @{
     ViewData["Title"] = "Work Instructions";
+    var categoryIcons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Engineering & Technical Systems",  "fa-solid fa-gears" },
+        { "HR, Admin & Finance",              "fa-solid fa-users" },
+        { "IT & Support Systems",             "fa-solid fa-server" },
+        { "Operations & Logistics",           "fa-solid fa-truck" },
+        { "Records, Documents & Compliance",  "fa-solid fa-clipboard-list" },
+        { "Uncategorized",                    "fa-solid fa-folder" },
+    };
+
+    var categoryAccents = new Dictionary<string, (string bg, string text, string border)>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Engineering & Technical Systems",  ("bg-emerald-50", "text-emerald-700", "border-emerald-200") },
+        { "HR, Admin & Finance",              ("bg-blue-50",    "text-blue-700",    "border-blue-200")    },
+        { "IT & Support Systems",             ("bg-amber-50",   "text-amber-700",   "border-amber-200")   },
+        { "Operations & Logistics",           ("bg-violet-50",  "text-violet-700",  "border-violet-200")  },
+        { "Records, Documents & Compliance",  ("bg-rose-50",    "text-rose-700",    "border-rose-200")    },
+        { "Uncategorized",                    ("bg-gray-50",    "text-gray-600",    "border-gray-200")    },
+    };
 }
 
-<!-- Tailwind CDN -->
+<!-- Dependencies -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
+<style>
+    * {
+        font-family: 'DM Sans', sans-serif;
+    }
 
-    <div class="min-h-screen bg-[#EEF4EE]">
+    /* Hero dot-grid texture */
+    .hero-texture {
+        background-image: radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
 
-        <!-- HERO SECTION -->
-        <section class="bg-[#1C3667] text-white relative overflow-hidden">
-            <div class="max-w-7xl mx-auto px-6 py-10">
+    /* Stat pill glassmorphism */
+    .stat-pill {
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.12);
+        backdrop-filter: blur(4px);
+    }
 
-                <div class="max-w-xl pl-20">
-                    <h1 style="letter-spacing: -1px;" class="text-5xl md:text-7lg font-bold leading-none">
-                        WORK <br />
-                        INSTRUCTIONS
+    /* Card hover lift */
+    .module-card {
+        transition: box-shadow 0.18s, transform 0.18s, border-left-color 0.18s;
+    }
+
+        .module-card:hover {
+            box-shadow: 0 4px 16px rgba(27,42,107,0.10);
+            transform: translateY(-1px);
+            border-left-color: #1B2A6B !important;
+        }
+
+            .module-card:hover .card-actions {
+                opacity: 1;
+            }
+
+    .card-actions {
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    /* Featured card */
+    .featured-card {
+        transition: box-shadow 0.18s, transform 0.18s;
+    }
+
+        .featured-card:hover {
+            box-shadow: 0 6px 20px rgba(27,42,107,0.12);
+            transform: translateY(-2px);
+        }
+
+    /* Search focus ring */
+    #global-search:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(27,42,107,0.20);
+    }
+
+    /* Thin scrollbar */
+    ::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+    }
+
+    /* Modal inputs */
+    .modal-input:focus {
+        outline: none;
+        border-color: #1B2A6B;
+        box-shadow: 0 0 0 2px rgba(27,42,107,0.12);
+    }
+
+    /* Add module dashed card */
+    .add-card {
+        border: 2px dashed #CBD5E1;
+        transition: border-color 0.18s, background 0.18s;
+    }
+
+        .add-card:hover {
+            border-color: #1B2A6B;
+            background: #F0F3FF;
+        }
+</style>
+
+<div class="min-h-screen flex flex-col bg-[#F6FFF6]">
+
+    <!-- HERO -->
+    <section class="bg-[#1B2A6B] text-white relative overflow-hidden"
+             style="box-shadow: 0 4px 24px rgba(27,42,107,0.22);">
+
+        <!-- Dot texture -->
+        <div class="hero-texture absolute inset-0 pointer-events-none"></div>
+        <!-- Radial glow accent -->
+        <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full pointer-events-none opacity-[0.06]"
+             style="background: radial-gradient(circle, #ffffff 0%, transparent 70%);"></div>
+
+        <div class="relative max-w-7xl mx-auto px-8">
+
+            <!-- ── Integrated Navbar Row ── -->
+            <div class="flex items-center justify-between py-4"
+                 style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+                        <img src="~/images/NoBGLogo.png"
+                             class="w-5 h-5 object-contain filter brightness-0 invert"
+                             alt="Logo" />
+                    </div>
+                    <span class="text-sm font-semibold text-white/90 tracking-tight">IT Solutions</span>
+                    <span class="text-white/20 text-xs">|</span>
+                    <span class="text-xs text-blue-300/80 font-medium">Work Instructions</span>
+                </div>
+
+                <!-- Nav actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Global search -->
+                    <div class="flex items-center gap-2 rounded-lg px-3 py-2"
+                         style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); width: 220px;">
+                        <i class="fa-solid fa-magnifying-glass text-white/40 text-xs"></i>
+                        <input id="global-search"
+                               type="text"
+                               placeholder="Search modules..."
+                               oninput="searchModules(this.value)"
+                               class="bg-transparent text-xs text-white placeholder-white/30 flex-1 transition"
+                               style="outline:none;" />
+                    </div>
+
+                    <!-- Add module shortcut -->
+                    <button type="button" onclick="openAddModal()"
+                            class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                            style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        Add Module
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Hero Title + Stats Row ── -->
+            <div class="flex items-end justify-between gap-6 py-8 flex-wrap">
+
+                <!-- Title block -->
+                <div>
+                    <p class="text-[11px] font-semibold text-blue-300/70 uppercase tracking-widest mb-2">
+                        IT Knowledge Base
+                    </p>
+                    <h1 class="text-5xl font-bold leading-none tracking-tight">
+                        WORK<br />INSTRUCTIONS
                     </h1>
+                    <p class="text-blue-200/60 text-sm mt-3 max-w-xs leading-relaxed">
+                        Step-by-step guides for all IT systems and processes.
+                    </p>
+                </div>
 
-                    <!-- DOTS -->
-                    <div class="mt-8 space-y-3 flex flex-col items-center">
-                        <!-- Row 1 -->
-                        <div class="flex gap-3 translate-x-10">
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
+                <!-- Stat pills (right-aligned, inside hero) -->
+                <div class="flex items-center gap-3 pb-1 flex-wrap">
+
+                    <div class="stat-pill flex items-center gap-2.5 rounded-xl px-4 py-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                             style="background: rgba(255,255,255,0.12);">
+                            <i class="fa-solid fa-table-cells text-white text-sm"></i>
                         </div>
-                        <!-- Row 2 -->
-                        <div class="flex gap-3 translate-x-10">
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200/60 leading-none">Total Modules</p>
+                            <p class="text-lg font-bold text-white leading-tight mt-0.5">@Model.TotalModules</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Fading logo-->
-                <div class="absolute right-10 bottom-50 opacity-10 hidden md:block h-40">
-                    <img src="~/images/NoBGLogo.png"
-                         class="w-80 h-80 object-contain filter brightness-0 invert translate-y-12" />
-                </div>
+                    <div class="stat-pill flex items-center gap-2.5 rounded-xl px-4 py-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                             style="background: rgba(255,255,255,0.12);">
+                            <i class="fa-solid fa-folder text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-blue-200/60 leading-none">Categories</p>
+                            <p class="text-lg font-bold text-white leading-tight mt-0.5">@Model.TotalCategories</p>
+                        </div>
+                    </div>
 
-            </div>
-        </section>
+                    <div class="stat-pill flex items-center gap-2.5 rounded-xl px-4 py-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                             style="background: rgba(255,255,255,0.12);">
+                            <i class="fa-solid fa-clock-rotate-left text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-blue-200/60 leading-none">Recently Updated</p>
+                            <p class="text-lg font-bold text-white leading-tight mt-0.5">@Model.RecentlyUpdatedCount</p>
+                        </div>
+                    </div>
 
-    <div class="bg-[#DDF0DD] py-3 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6 flex items-center gap-8 justify-content-center">
-
-            <div class="flex items-center gap-2">
-                <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-                    <i class="fa-solid fa-table-cells text-[#1C3667] text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-[13px] text-[#4a7c4a] font-medium leading-none">Total Modules</p>
-                    <p class="text-md font-bold text-[#1C3667] leading-tight">@Model.TotalModules</p>
-                </div>
-            </div>
-
-            <div class="w-px h-6 bg-[#b2d9b2]"></div>
-
-            <div class="flex items-center gap-2">
-                <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-                    <i class="fa-solid fa-folder text-[#1C3667] text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-[13px] text-[#4a7c4a] font-medium leading-none">Categories</p>
-                    <p class="text-md font-bold text-[#1C3667] leading-tight">@Model.TotalCategories</p>
-                </div>
-            </div>
-
-            <div class="w-px h-6 bg-[#b2d9b2]"></div>
-
-            <div class="flex items-center gap-2">
-                <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-                    <i class="fa-solid fa-clock-rotate-left text-[#1C3667] text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-[13px] text-[#4a7c4a] font-medium leading-none">Recently Updated</p>
-                    <p class="text-md font-bold text-[#1C3667] leading-tight">@Model.RecentlyUpdatedCount</p>
                 </div>
             </div>
 
         </div>
-    </div>
+    </section>
 
-         <!-- Body -->
-        <div class="min-h-screen py-16">
-            <div class="max-w-7xl mx-auto, px-6 pl-20">
-                <!-- Featured Cards (large, top row) -->
-            <div id="featured-section">
-                @if (Model.FeaturedCards.Any())
-                {
+    <!-- BODY -->
+    <div class="flex-1 py-8">
+        <div class="max-w-7xl mx-auto px-8">
+
+            <!-- RECENTLY UPDATED -->
+            @if (Model.FeaturedCards.Any())
+            {
+                <div id="featured-section" class="mb-10 m-4">
+
+                    <!-- Section eyebrow -->
                     <div class="flex items-center gap-3 mb-4">
-                        <span class="text-[11px] font-bold text-[#1C3667] uppercase tracking-widest">
+                        <span class="text-[11px] font-bold text-[#1B2A6B] uppercase tracking-widest">
                             Recently Updated
                         </span>
-                        <div class="flex-1" style="height:1px; background:#D1E8D1;"></div>
-                    </div>
-                }
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-8">
-                    @foreach (var item in Model.FeaturedCards)
-                    {
-                        var badgeClass = item.StatusColor switch
-                        {
-                            "updated" => "bg-green-100 text-green-800",
-                            "review" => "bg-yellow-100 text-yellow-800",
-                            _ => "bg-blue-100 text-blue-800"
-                        };
-
-                        <a href="@item.URL"
-                           class="featured-card bg-white rounded-xl p-4 hover:shadow-md transition cursor-pointer flex flex-col"
-                           data-title="@item.Title.ToLower()"
-                           style="border: 1px solid #e5e7eb; border-top: 4px solid #1C3667;">
-
-                            <!-- Icon -->
-                            <div class="w-11 h-11 rounded-lg bg-[#DDF0DD] flex items-center justify-center mb-3">
-                                <i class="@item.IconClass text-[#1C3667] text-xl"></i>
-                            </div>
-
-                            <!-- Title & Subtitle -->
-                            <p class="font-bold text-[#1C3667] text-md leading-snug mb-1">@item.Title</p>
-                            <p class="text-sm text-gray-400 leading-relaxed flex-1">@item.Subtitle</p>
-
-                            <!-- Footer -->
-                            <div class="mt-4 pt-3 flex items-center justify-between"
-                                 style="border-top: 0.5px solid #F3F4F6;">
-                                <span class="text-[10px] font-semibold px-3 py-1 rounded-full @badgeClass">
-                                    @item.Status
-                                </span>
-                                <span class="text-[10px] text-gray-300">@item.LastUpdated</span>
-                            </div>
-
-                        </a>
-                    }
-                </div>
-                </div>
-
-                <!-- Secondary Cards grouped by category -->
-                @foreach (var group in Model.GroupedSecondaryCards)
-                {
-                <div class="category-group" data-category="@group.Key.ToLower()">
-
-                    <!-- Category Eyebrow Divider -->
-                    <div class="flex items-center gap-3 mb-4 mt-8">
-                        <span class="text-[11px] font-bold text-[#1C3667] uppercase tracking-widest">
-                            @group.Key
+                        <span class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2 py-0.5 rounded-full">
+                            @Model.FeaturedCards.Count
                         </span>
-                        <div class="flex-1" style="height:1px; background:#D1E8D1;"></div>
+                        <div class="flex-1 h-px bg-gradient-to-r from-[#E0E4F4] to-transparent"></div>
+                        <button type="button"
+                                id="toggle-featured-btn"
+                                onclick="toggleFeatured()"
+                                class="flex items-center gap-1.5 text-[11px] font-semibold text-[#1B2A6B]/60 hover:text-[#1B2A6B] transition">
+                            <span id="toggle-featured-label">See all</span>
+                            <i id="toggle-featured-icon" class="fa-solid fa-chevron-down text-[8px]"></i>
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
-                        @foreach (var item in group.Value)
+                    <!-- Featured card grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        @{
+                            int featuredIndex = 0;
+                        }
+                        @foreach (var item in Model.FeaturedCards)
                         {
-                            <div class="bg-white rounded-xl p-3 hover:shadow-md transition relative module-card"
-                                 data-title="@item.Title.ToLower()"
-                                 style="border: 1px solid #e5e7eb; border-left: 4px solid #1C3667;"
-                                 onmouseenter="this.querySelector('.card-actions').style.opacity='1'"
-                                 onmouseleave="this.querySelector('.card-actions').style.opacity='0'">
+                            var badgeCls = item.StatusColor switch
+                            {
+                                "updated" => "bg-emerald-100 text-emerald-700",
+                                "review" => "bg-amber-100 text-amber-700",
+                                _ => "bg-[#EEF2FF] text-[#1B2A6B]"
+                            };
 
-                                <!-- Action buttons -->
-                                <div class="card-actions"
-                                     style="position:absolute; top:8px; right:8px; z-index:10; opacity:0; transition: opacity 0.2s; display:flex; gap:4px;">
+                            var isExtra = featuredIndex >= 4;
+                            var extraCls = isExtra ? "featured-extra" : "";
+                            var extraStyl = isExtra ? "display:none;" : "";
 
-                                    <!-- Edit button -->
-                                    <button type="button"
-                                            onclick="openEditModal('@item.URL.Split('=').Last()', '@item.Title', '@item.Subtitle', '@item.IconClass', '@item.Category')"
-                                            class="w-6 h-6 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center">
-                                        <i class="fa-solid fa-pen text-blue-400 text-[10px]"></i>
-                                    </button>
+                            <a href="@item.URL"
+                               class="featured-card bg-white rounded-xl p-4 flex flex-col @extraCls"
+                               data-title="@item.Title.ToLower()"
+                               style="border: 1px solid #E8EAF0; border-left: 3px solid #1B2A6B; @extraStyl">
 
-                                    <!-- Delete button -->
-                                    <form method="post" action="/Home/DeleteModule">
-                                        <input type="hidden" name="slug" value="@item.URL.Split('=').Last()" />
-                                        <button type="submit"
-                                                class="w-6 h-6 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center"
-                                                onclick="return confirm('Delete @item.Title? This will also delete all its files.')">
-                                            <i class="fa-solid fa-trash text-red-400 text-[10px]"></i>
-                                        </button>
-                                    </form>
-
+                                <!-- Icon + badge row -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
+                                        <i class="@item.IconClass text-[#1B2A6B] text-base"></i>
+                                    </div>
+                                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-full @badgeCls">
+                                        @item.Status
+                                    </span>
                                 </div>
 
-                                <a href="@item.URL" class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
-                                        <i class="@item.IconClass text-[#1C3667] text-2xl"></i>
+                                <!-- Title + subtitle -->
+                                <p class="text-sm font-semibold text-[#1B2A6B] leading-snug mb-1">@item.Title</p>
+                                <p class="text-[11px] text-gray-400 leading-relaxed flex-1 line-clamp-2">@item.Subtitle</p>
+
+                                <!-- Footer -->
+                                <div class="mt-3 pt-3 flex items-center justify-between"
+                                     style="border-top: 1px solid #F0F1F5;">
+                                    <span class="text-[10px] text-gray-300 flex items-center gap-1">
+                                        <i class="fa-solid fa-clock text-[8px]"></i>
+                                        @item.LastUpdated
+                                    </span>
+                                    <i class="fa-solid fa-arrow-right text-[#1B2A6B]/30 text-xs"></i>
+                                </div>
+
+                            </a>
+                            featuredIndex++;
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- SECONDARY CARDS — grouped by category -->
+            @foreach (var group in Model.GroupedSecondaryCards)
+            {
+                var icon = categoryIcons.TryGetValue(group.Key, out var ic) ? ic : "fa-solid fa-folder";
+                var (accentBg, accentText, accentBorder) = categoryAccents.TryGetValue(group.Key, out var ac)
+                ? ac : ("bg-gray-50", "text-gray-600", "border-gray-200");
+
+                <div class="category-group mb-8" data-category="@group.Key.ToLower()">
+
+                    <!-- Category eyebrow -->
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <div class="w-6 h-6 rounded-md @accentBg @accentBorder border flex items-center justify-center flex-shrink-0">
+                            <i class="@icon @accentText text-[11px]"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-[#1B2A6B] uppercase tracking-widest">@group.Key</span>
+                        <span class="text-[10px] text-gray-400 font-medium">@group.Value.Count module(s)</span>
+                        <div class="flex-1 h-px bg-gradient-to-r from-[#E0E4F4] to-transparent"></div>
+                    </div>
+
+                    <!-- Module cards grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        @foreach (var item in group.Value)
+                        {
+                            var (mBg, mText, mBorder) = categoryAccents.TryGetValue(item.Category ?? group.Key, out var ma)
+                            ? ma : ("bg-gray-50", "text-gray-500", "border-gray-200");
+
+                            <div class="module-card bg-white rounded-xl p-3 relative"
+                                 data-title="@item.Title.ToLower()"
+                                 style="border: 1px solid #E8EAF0; border-left: 3px solid transparent;">
+
+                                <!-- Hover actions -->
+                                <div class="card-actions absolute top-2 right-2 z-10 flex gap-1">
+                                    <button type="button"
+                                            onclick="openEditModal('@item.URL.Split('=').Last()', '@item.Title', '@item.Subtitle', '@item.IconClass', '@item.Category')"
+                                            class="w-6 h-6 rounded-md bg-[#EEF2FF] hover:bg-[#E0E6FF] flex items-center justify-center transition">
+                                        <i class="fa-solid fa-pen text-[#1B2A6B] text-[9px]"></i>
+                                    </button>
+                                    <form method="post" action="/Home/DeleteModule" style="display:contents;">
+                                        <input type="hidden" name="slug" value="@item.URL.Split('=').Last()" />
+                                        <button type="submit"
+                                                onclick="return confirm('Delete @item.Title? This will also delete all its files.')"
+                                                class="w-6 h-6 rounded-md bg-red-50 hover:bg-red-100 flex items-center justify-center transition">
+                                            <i class="fa-solid fa-trash text-red-400 text-[9px]"></i>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <a href="@item.URL" class="flex items-center gap-2.5">
+                                    <div class="w-9 h-9 rounded-lg @mBg @mBorder border flex items-center justify-center flex-shrink-0">
+                                        <i class="@item.IconClass @mText text-base"></i>
                                     </div>
-                                    <div class="min-w-0">
-                                        <p class="font-bold text-[#1C3667] text-sm leading-snug">@item.Title</p>
-                                        <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">@item.Subtitle</p>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-semibold text-[#1B2A6B] leading-snug truncate pr-10">@item.Title</p>
+                                        <p class="text-[10px] text-gray-400 mt-0.5 leading-snug truncate">@item.Subtitle</p>
                                     </div>
                                 </a>
+
                             </div>
                         }
                     </div>
                 </div>
-                }
+            }
 
-                <!-- ADD MODULE CARD — sits below all groups -->
-                <div class="mt-4">
-                    <button type="button" onclick="openAddModal()"
-                            class="bg-white rounded-xl p-4 hover:shadow-md transition cursor-pointer flex items-center gap-3"
-                            style="border: 1px dashed #1C3667;">
-                        <div class="w-12 h-12 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
-                            <i class="fa-solid fa-plus text-[#1C3667] text-2xl"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="font-bold text-[#1C3667] text-xs leading-snug">Add Module</p>
-                            <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">Click to add a new module</p>
-                        </div>
-                    </button>
-                </div>
+            <!-- ADD MODULE CARD -->
+            <div class="mt-2 mb-4">
+                <button type="button" onclick="openAddModal()"
+                        class="add-card w-full bg-white rounded-xl p-4 flex items-center gap-3 transition">
+                    <div class="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-plus text-[#1B2A6B] text-lg"></i>
+                    </div>
+                    <div class="text-left">
+                        <p class="text-sm font-semibold text-[#1B2A6B]">Add New Module</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Click to create a new work instruction module</p>
+                    </div>
+                </button>
+            </div>
 
+            <!-- No results -->
             <div id="no-results" style="display:none;"
-                 class="text-center py-16 text-gray-400">
-                <i class="fa-solid fa-magnifying-glass text-4xl mb-3 block text-gray-200"></i>
+                 class="text-center py-20">
+                <div class="w-14 h-14 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-magnifying-glass text-[#1B2A6B] text-xl"></i>
+                </div>
                 <p class="text-sm font-semibold text-gray-500">No modules found</p>
                 <p class="text-xs text-gray-400 mt-1">Try a different search term</p>
             </div>
 
-
-
-                <!-- ADD MODULE MODAL -->
-                <div id="add-modal"
-                     class="fixed inset-0 flex items-center justify-center"
-                     style="background: rgba(0,0,0,0.5); display:none; z-index:9999;">
-
-                    <div class="bg-white rounded-xl shadow-xl p-6 overflow-y-auto"
-                         style="width: 420px; max-height: 90vh;">
-
-                        <!-- Header -->
-                        <div class="flex items-center justify-between mb-5">
-                            <p class="text-sm font-bold text-[#1C3667]">Add New Module</p>
-                            <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                        </div>
-
-                        <!-- Form -->
-                        <form method="post" action="/Home/AddModule">
-
-                            <!-- Title -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Title</label>
-                                <input type="text" name="title" required placeholder="e.g. Fleet Management"
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                            </div>
-
-                            <!-- Subtitle -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Descrition</label>
-                                <input type="text" name="subtitle" placeholder="e.g. Manage company vehicles"
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                            </div>
-
-                            <!-- Category -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Category</label>
-                                <input type="text" name="category"
-                                       placeholder="e.g. HR & Finance"
-                                       list="category-suggestions"
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-
-                                <!-- Suggests existing categories as you type -->
-                                <datalist id="category-suggestions">
-                                    @foreach (var cat in Model.GroupedSecondaryCards.Keys)
-                                    {
-                                        <option value="@cat"></option>
-                                    }
-                                </datalist>
-                                <p class="text-[10px] text-gray-400 mt-1">Type a new category or pick an existing one</p>
-                            </div>
-
-                            <!-- Icon -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Icon Class</label>
-                                <div class="flex gap-2">
-                                    <input type="text" name="iconClass" id="icon-input"
-                                           placeholder="e.g. fa-solid fa-car"
-                                           oninput="updateIconPreview(this.value)"
-                                           class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                                    <!-- Live preview -->
-                                    <div class="w-10 h-10 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
-                                        <i id="icon-preview" class="fa-solid fa-icons text-[#1C3667] text-lg"></i>
-                                    </div>
-                                </div>
-                                <p class="text-[10px] text-gray-400 mt-1">
-                                    Find icons at <a href="https://fontawesome.com/icons" target="_blank" class="underline text-[#1C3667]">fontawesome.com/icons</a>
-                                </p>
-                            </div>
-
-                            <!-- Quick icon picker -->
-                            <div class="mb-5">
-                                <p class="text-[10px] text-gray-400 mb-2">Quick pick:</p>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (var icon in new[] {
-                                                                "fa-solid fa-server",           "fa-solid fa-coins",            
-                                                                    "fa-solid fa-gears",            "fa-solid fa-chart-bar",
-                                                                    "fa-solid fa-users-gear",       "fa-solid fa-globe",
-                                                                    "fa-regular fa-window-restore", "fa-brands fa-dropbox",
-                                                                    "fa-solid fa-file-pen",         "fa-solid fa-chart-column",
-                                                                    "fa-regular fa-image",          "fa-solid fa-clipboard-list",
-                                                                    "fa-solid fa-people-arrows",    "fa-solid fa-chart-simple",
-                                                                    "fa-solid fa-circle-nodes",     "fa-solid fa-desktop",
-                                                                    "fa-solid fa-utensils",         "fa-solid fa-key",
-                                                                    "fa-solid fa-terminal",         "fa-solid fa-ellipsis",
-                                                                    "fa-solid fa-truck",            "fa-solid fa-plane-departure",
-                                                                    "fa-solid fa-box",              "fa-solid fa-building",
-                                                                    "fa-solid fa-laptop",           "fa-solid fa-file",
-                                                                    "fa-solid fa-chart-line",       "fa-solid fa-hotel",
-                                                                    "fa-solid fa-gear",             "fa-solid fa-users",
-                                                                    "fa-solid fa-person-shelter",   "fa-solid fa-person-running",
-                                                                    "fa-solid fa-ticket",           "fa-solid fa-circle-1",
-                                                                    "fa-solid fa-infinity"
-
-                                                                    })
-                                    {
-                                        <button type="button"
-                                                onclick="pickIcon('@icon')"
-                                                class="w-8 h-8 rounded-md bg-gray-100 hover:bg-[#DDF0DD] flex items-center justify-center transition"
-                                                title="@icon">
-                                            <i class="@icon text-[#1C3667] text-sm"></i>
-                                        </button>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Buttons -->
-                            <div class="flex gap-2">
-                                <button type="button" onclick="closeAddModal()"
-                                        class="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition">
-                                    Cancel
-                                </button>
-                                <button type="submit"
-                                        class="flex-1 bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition">
-                                    <i class="fa-solid fa-plus mr-1"></i> Add Module
-                                </button>
-                            </div>
-
-                        </form>
-                    </div>
-                </div>
-
-                <!-- EDIT MODULE MODAL -->
-                <div id="edit-modal"
-                     class="fixed inset-0 flex items-center justify-center"
-                     style="background: rgba(0,0,0,0.5); display:none; z-index:9999;">
-
-                    <div class="bg-white rounded-xl shadow-xl p-6 overflow-y-auto"
-                         style="width: 420px; max-height: 90vh;">
-
-                        <!-- Header -->
-                        <div class="flex items-center justify-between mb-5">
-                            <p class="text-sm font-bold text-[#1C3667]">Edit Module</p>
-                            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                        </div>
-
-                        <form method="post" action="/Home/EditModule">
-                            <input type="hidden" name="slug" id="edit-slug" />
-
-                            <!-- Title -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Title</label>
-                                <input type="text" name="title" id="edit-title" required
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                            </div>
-
-                            <!-- Subtitle -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Description</label>
-                                <input type="text" name="subtitle" id="edit-subtitle"
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                            </div>
-
-                            <!-- Category -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Category</label>
-                                <input type="text" name="category" id="edit-category"
-                                       list="edit-category-suggestions"
-                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                                <datalist id="edit-category-suggestions">
-                                    @foreach (var cat in Model.GroupedSecondaryCards.Keys)
-                                    {
-                                        <option value="@cat"></option>
-                                    }
-                                </datalist>
-                            </div>
-
-                            <!-- Icon -->
-                            <div class="mb-4">
-                                <label class="text-xs font-semibold text-[#1C3667] block mb-1">Icon Class</label>
-                                <div class="flex gap-2">
-                                    <input type="text" name="iconClass" id="edit-icon-input"
-                                           oninput="updateEditIconPreview(this.value)"
-                                           class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#1C3667]" />
-                                    <div class="w-10 h-10 rounded-lg bg-[#DDF0DD] flex items-center justify-center flex-shrink-0">
-                                        <i id="edit-icon-preview" class="fa-solid fa-icons text-[#1C3667] text-lg"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quick icon picker -->
-                            <div class="mb-5">
-                                <p class="text-[10px] text-gray-400 mb-2">Quick pick:</p>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (var icon in new[] {
-                                                                "fa-solid fa-server",           "fa-solid fa-coins",
-                                                                "fa-solid fa-gears",            "fa-solid fa-chart-bar",
-                                                                "fa-solid fa-users-gear",       "fa-solid fa-globe",
-                                                                "fa-regular fa-window-restore", "fa-brands fa-dropbox",
-                                                                "fa-solid fa-file-pen",         "fa-solid fa-chart-column",
-                                                                "fa-regular fa-image",          "fa-solid fa-clipboard-list",
-                                                                "fa-solid fa-people-arrows",    "fa-solid fa-chart-simple",
-                                                                "fa-solid fa-circle-nodes",     "fa-solid fa-desktop",
-                                                                "fa-solid fa-utensils",         "fa-solid fa-key",
-                                                                "fa-solid fa-terminal",         "fa-solid fa-ellipsis",
-                                                                "fa-solid fa-truck",            "fa-solid fa-plane-departure",
-                                                                "fa-solid fa-box",              "fa-solid fa-building",
-                                                                "fa-solid fa-laptop",           "fa-solid fa-file",
-                                                                "fa-solid fa-chart-line",       "fa-solid fa-hotel",
-                                                                "fa-solid fa-gear",             "fa-solid fa-users",
-                                                                "fa-solid fa-person-shelter",   "fa-solid fa-person-running",
-                                                                "fa-solid fa-ticket",           "fa-solid fa-circle-1",
-                                                                "fa-solid fa-infinity"
-                                                                    })
-                                    {
-                                        <button type="button"
-                                                onclick="pickEditIcon('@icon')"
-                                                class="w-8 h-8 rounded-md bg-gray-100 hover:bg-[#DDF0DD] flex items-center justify-center transition"
-                                                title="@icon">
-                                            <i class="@icon text-[#1C3667] text-sm"></i>
-                                        </button>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Buttons -->
-                            <div class="flex gap-2">
-                                <button type="button" onclick="closeEditModal()"
-                                        class="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition">
-                                    Cancel
-                                </button>
-                                <button type="submit"
-                                        class="flex-1 bg-[#1C3667] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#16305a] transition">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes
-                                </button>
-                            </div>
-
-                        </form>
-                    </div>
-                </div>
-
-            </div>
         </div>
-
     </div>
 
+</div>
+
+<!-- ADD MODULE MODAL -->
+<div id="add-modal"
+     class="fixed inset-0 flex items-center justify-center z-[9999]"
+     style="background: rgba(15,20,50,0.55); backdrop-filter: blur(2px); display:none !important;">
+
+    <div class="bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto"
+         style="width: 440px; max-height: 90vh; border: 1px solid #E8EAF0;">
+
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
+                    <i class="fa-solid fa-plus text-[#1B2A6B] text-xs"></i>
+                </div>
+                <p class="text-sm font-semibold text-[#1B2A6B]">Add New Module</p>
+            </div>
+            <button onclick="closeAddModal()"
+                    class="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="post" action="/Home/AddModule">
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Title</label>
+                <input type="text" name="title" required placeholder="e.g. Fleet Management"
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Description</label>
+                <input type="text" name="subtitle" placeholder="e.g. Manage company vehicles"
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Category</label>
+                <input type="text" name="category" placeholder="e.g. HR & Finance"
+                       list="category-suggestions"
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+                <datalist id="category-suggestions">
+                    @foreach (var cat in Model.GroupedSecondaryCards.Keys)
+                    {
+                        <option value="@cat"></option>
+                    }
+                </datalist>
+                <p class="text-[10px] text-gray-400 mt-1">Type a new category or pick an existing one</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Icon</label>
+                <div class="flex gap-2">
+                    <input type="text" name="iconClass" id="icon-input"
+                           placeholder="e.g. fa-solid fa-car"
+                           oninput="updateIconPreview(this.value)"
+                           class="modal-input flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+                    <div class="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0"
+                         style="border: 1px solid #E0E6FF;">
+                        <i id="icon-preview" class="fa-solid fa-icons text-[#1B2A6B] text-base"></i>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-1">
+                    Find icons at <a href="https://fontawesome.com/icons" target="_blank"
+                                     class="text-[#1B2A6B] underline underline-offset-2">fontawesome.com/icons</a>
+                </p>
+            </div>
+
+            <!-- Quick icon picker -->
+            <div class="mb-5">
+                <p class="text-[10px] text-gray-400 mb-2">Quick pick:</p>
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach (var icon in new[] {
+                                        "fa-solid fa-server","fa-solid fa-coins","fa-solid fa-gears","fa-solid fa-chart-bar",
+                                        "fa-solid fa-users-gear","fa-solid fa-globe","fa-regular fa-window-restore",
+                                        "fa-brands fa-dropbox","fa-solid fa-file-pen","fa-solid fa-chart-column",
+                                        "fa-regular fa-image","fa-solid fa-clipboard-list","fa-solid fa-people-arrows",
+                                        "fa-solid fa-chart-simple","fa-solid fa-circle-nodes","fa-solid fa-desktop",
+                                        "fa-solid fa-utensils","fa-solid fa-key","fa-solid fa-terminal","fa-solid fa-ellipsis",
+                                        "fa-solid fa-truck","fa-solid fa-plane-departure","fa-solid fa-box",
+                                        "fa-solid fa-building","fa-solid fa-laptop","fa-solid fa-file",
+                                        "fa-solid fa-chart-line","fa-solid fa-hotel","fa-solid fa-gear","fa-solid fa-users",
+                                        "fa-solid fa-person-shelter","fa-solid fa-person-running","fa-solid fa-ticket",
+                                        "fa-solid fa-infinity"
+                                        })
+                    {
+                        <button type="button" onclick="pickIcon('@icon')"
+                                class="w-8 h-8 rounded-lg bg-[#F5F6FA] hover:bg-[#EEF2FF] flex items-center justify-center transition"
+                                style="border: 1px solid #E8EAF0;" title="@icon">
+                            <i class="@icon text-[#1B2A6B] text-sm"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeAddModal()"
+                        class="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-[#1B2A6B] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#152255] transition">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Add Module
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- EDIT MODULE MODAL -->
+<div id="edit-modal"
+     class="fixed inset-0 flex items-center justify-center z-[9999]"
+     style="background: rgba(15,20,50,0.55); backdrop-filter: blur(2px); display:none !important;">
+
+    <div class="bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto"
+         style="width: 440px; max-height: 90vh; border: 1px solid #E8EAF0;">
+
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
+                    <i class="fa-solid fa-pen text-[#1B2A6B] text-xs"></i>
+                </div>
+                <p class="text-sm font-semibold text-[#1B2A6B]">Edit Module</p>
+            </div>
+            <button onclick="closeEditModal()"
+                    class="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="post" action="/Home/EditModule">
+            <input type="hidden" name="slug" id="edit-slug" />
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Title</label>
+                <input type="text" name="title" id="edit-title" required
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Description</label>
+                <input type="text" name="subtitle" id="edit-subtitle"
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Category</label>
+                <input type="text" name="category" id="edit-category"
+                       list="edit-category-suggestions"
+                       class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+                <datalist id="edit-category-suggestions">
+                    @foreach (var cat in Model.GroupedSecondaryCards.Keys)
+                    {
+                        <option value="@cat"></option>
+                    }
+                </datalist>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Icon</label>
+                <div class="flex gap-2">
+                    <input type="text" name="iconClass" id="edit-icon-input"
+                           oninput="updateEditIconPreview(this.value)"
+                           class="modal-input flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
+                    <div class="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0"
+                         style="border: 1px solid #E0E6FF;">
+                        <i id="edit-icon-preview" class="fa-solid fa-icons text-[#1B2A6B] text-base"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick icon picker -->
+            <div class="mb-5">
+                <p class="text-[10px] text-gray-400 mb-2">Quick pick:</p>
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach (var icon in new[] {
+                                        "fa-solid fa-server","fa-solid fa-coins","fa-solid fa-gears","fa-solid fa-chart-bar",
+                                        "fa-solid fa-users-gear","fa-solid fa-globe","fa-regular fa-window-restore",
+                                        "fa-brands fa-dropbox","fa-solid fa-file-pen","fa-solid fa-chart-column",
+                                        "fa-regular fa-image","fa-solid fa-clipboard-list","fa-solid fa-people-arrows",
+                                        "fa-solid fa-chart-simple","fa-solid fa-circle-nodes","fa-solid fa-desktop",
+                                        "fa-solid fa-utensils","fa-solid fa-key","fa-solid fa-terminal","fa-solid fa-ellipsis",
+                                        "fa-solid fa-truck","fa-solid fa-plane-departure","fa-solid fa-box",
+                                        "fa-solid fa-building","fa-solid fa-laptop","fa-solid fa-file",
+                                        "fa-solid fa-chart-line","fa-solid fa-hotel","fa-solid fa-gear","fa-solid fa-users",
+                                        "fa-solid fa-person-shelter","fa-solid fa-person-running","fa-solid fa-ticket",
+                                        "fa-solid fa-infinity"
+                                        })
+                    {
+                        <button type="button" onclick="pickEditIcon('@icon')"
+                                class="w-8 h-8 rounded-lg bg-[#F5F6FA] hover:bg-[#EEF2FF] flex items-center justify-center transition"
+                                style="border: 1px solid #E8EAF0;" title="@icon">
+                            <i class="@icon text-[#1B2A6B] text-sm"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeEditModal()"
+                        class="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-[#1B2A6B] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#152255] transition">
+                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save Changes
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
 <script>
+    /* ─── ADD MODAL ─── */
     function openAddModal() {
-        document.getElementById('add-modal').style.display = 'flex';
+        document.getElementById('add-modal').style.cssText = 'display:flex !important;';
         document.body.style.overflow = 'hidden';
     }
-
     function closeAddModal() {
-        document.getElementById('add-modal').style.display = 'none';
+        document.getElementById('add-modal').style.cssText = 'display:none !important;';
         document.body.style.overflow = '';
     }
+    document.getElementById('add-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeAddModal();
+    });
 
-    function updateIconPreview(value) {
-        const preview = document.getElementById('icon-preview');
-        preview.className = value + ' text-[#1C3667] text-lg';
+    /* ─── EDIT MODAL ─── */
+    function openEditModal(slug, title, subtitle, iconClass, category) {
+        document.getElementById('edit-slug').value      = slug;
+        document.getElementById('edit-title').value     = title;
+        document.getElementById('edit-subtitle').value  = subtitle;
+        document.getElementById('edit-category').value  = category;
+        document.getElementById('edit-icon-input').value = iconClass;
+        updateEditIconPreview(iconClass);
+        document.getElementById('edit-modal').style.cssText = 'display:flex !important;';
+        document.body.style.overflow = 'hidden';
     }
+    function closeEditModal() {
+        document.getElementById('edit-modal').style.cssText = 'display:none !important;';
+        document.body.style.overflow = '';
+    }
+    document.getElementById('edit-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
 
+    /* ─── ICON PICKERS ─── */
+    function updateIconPreview(value) {
+        document.getElementById('icon-preview').className = value + ' text-[#1B2A6B] text-base';
+    }
     function pickIcon(iconClass) {
         document.getElementById('icon-input').value = iconClass;
         updateIconPreview(iconClass);
     }
-
-    // Close when clicking outside
-    document.getElementById('add-modal').addEventListener('click', function (e) {
-        if (e.target === this) closeAddModal();
-    });
-
-        function openEditModal(slug, title, subtitle, iconClass, category) {
-        document.getElementById('edit-slug').value = slug;
-        document.getElementById('edit-title').value = title;
-        document.getElementById('edit-subtitle').value = subtitle;
-        document.getElementById('edit-category').value = category;
-        document.getElementById('edit-icon-input').value = iconClass;
-        updateEditIconPreview(iconClass);
-        document.getElementById('edit-modal').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeEditModal() {
-        document.getElementById('edit-modal').style.display = 'none';
-        document.body.style.overflow = '';
-    }
-
     function updateEditIconPreview(value) {
-        document.getElementById('edit-icon-preview').className = value + ' text-[#1C3667] text-lg';
+        document.getElementById('edit-icon-preview').className = value + ' text-[#1B2A6B] text-base';
     }
-
     function pickEditIcon(iconClass) {
         document.getElementById('edit-icon-input').value = iconClass;
         updateEditIconPreview(iconClass);
     }
 
-    document.getElementById('edit-modal').addEventListener('click', function (e) {
-        if (e.target === this) closeEditModal();
+    /* ─── ESC TO CLOSE ─── */
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeAddModal(); closeEditModal(); }
     });
 
-
-        function searchModules(query) {
+    /* ─── SEARCH ─── */
+    function searchModules(query) {
         const q = query.toLowerCase().trim();
 
-        // Show/hide individual cards
         document.querySelectorAll('.module-card').forEach(card => {
             const title = card.getAttribute('data-title') || '';
             card.style.display = title.includes(q) ? '' : 'none';
         });
 
-        // Hide category group entirely if all its cards are hidden
         document.querySelectorAll('.category-group').forEach(group => {
-            const visibleCards = group.querySelectorAll('.module-card:not([style*="display: none"])');
-            group.style.display = visibleCards.length === 0 ? 'none' : '';
+            const visible = group.querySelectorAll('.module-card:not([style*="display: none"])');
+            group.style.display = visible.length === 0 ? 'none' : '';
         });
 
-        // Show/hide featured cards too
         document.querySelectorAll('.featured-card').forEach(card => {
             const title = card.getAttribute('data-title') || '';
             card.style.display = title.includes(q) ? '' : 'none';
         });
 
-        // Hide the "Recently Updated" header if no featured cards are visible
         const featuredSection = document.getElementById('featured-section');
         if (featuredSection) {
-            const visibleFeatured = featuredSection.querySelectorAll('.featured-card:not([style*="display: none"])');
-            featuredSection.style.display = visibleFeatured.length === 0 && q !== '' ? 'none' : '';
+            const vis = featuredSection.querySelectorAll('.featured-card:not([style*="display: none"])');
+            featuredSection.style.display = vis.length === 0 && q !== '' ? 'none' : '';
         }
 
-        // Show no-results message
-        const noResults = document.getElementById('no-results');
-        const allHidden = document.querySelectorAll('.module-card:not([style*="display: none"])').length === 0;
+        const noResults  = document.getElementById('no-results');
+        const allHidden  = document.querySelectorAll('.module-card:not([style*="display: none"])').length === 0;
         if (noResults) noResults.style.display = allHidden && q !== '' ? 'block' : 'none';
+    }
+
+    /* ─── TOGGLE FEATURED ─── */
+    let featuredExpanded = false;
+    function toggleFeatured() {
+        featuredExpanded = !featuredExpanded;
+        document.querySelectorAll('.featured-extra').forEach(c => {
+            c.style.display = featuredExpanded ? '' : 'none';
+        });
+        document.getElementById('toggle-featured-label').textContent =
+            featuredExpanded ? 'Show less' : 'See all';
+        document.getElementById('toggle-featured-icon').className =
+            featuredExpanded
+                ? 'fa-solid fa-chevron-up text-[8px]'
+                : 'fa-solid fa-chevron-down text-[8px]';
     }
 </script>

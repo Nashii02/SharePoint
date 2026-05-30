@@ -31,51 +31,51 @@ namespace Sharepoint.Controllers
         {
             var allModules = _context.Modules.ToList();
 
-            var recentCutoff = DateTime.Now.AddDays(-7);
+            // Get the 4 most recently updated modules, latest first (left to right)
             var recentlyUpdated = allModules
-                .Where(m => m.LastFileUpload.HasValue && m.LastFileUpload >= recentCutoff)
+                .Where(m => m.LastFileUpload.HasValue)
+                .OrderByDescending(m => m.LastFileUpload)
+                .Take(9)
                 .ToList();
 
             var model = new WorkInstructionViewModel
             {
-                TotalModules = allModules.Count,
-                TotalCategories = allModules.Where(m => !m.IsFeatured)
-                                .GroupBy(m => m.Category ?? "Uncategorized")
-                                .Count(),
+                TotalModules = allModules.Count(m => !m.IsFeatured),
+                TotalCategories = allModules
+                    .Where(m => !m.IsFeatured)
+                    .GroupBy(m => m.Category ?? "Uncategorized")
+                    .Count(),
                 RecentlyUpdatedCount = recentlyUpdated.Count,
 
-                FeaturedCards = allModules
-                    .Where(m => m.IsFeatured)
-                    .Concat(recentlyUpdated)
-                    .DistinctBy(m => m.Slug + (recentlyUpdated.Contains(m) ? "_recent" : ""))
+                // Featured = only the 4 most recently updated, latest on the left
+                FeaturedCards = recentlyUpdated
                     .Select(m => new WorkInstructionCard
                     {
                         Title = m.Title,
                         Subtitle = m.Subtitle ?? "",
                         IconClass = m.IconClass ?? "",
-                        Status = recentlyUpdated.Contains(m) ? "Recently Updated" : (m.Status ?? ""),
-                        StatusColor = recentlyUpdated.Contains(m) ? "updated" : (m.StatusColor ?? ""),
-                        LastUpdated = m.LastUpdated ?? "",
+                        Status = "Recently Updated",
+                        StatusColor = "updated",
+                        LastUpdated = m.LastFileUpload?.ToString("MMM dd, yyyy") ?? "",
                         URL = $"/Home/Module?id={m.Slug}"
                     }).ToList(),
 
-                // Group secondary cards by category, uncategorized goes last
+                // Secondary = ALL non-featured modules, always stays regardless of updates
                 GroupedSecondaryCards = allModules
-                .Where(m => !m.IsFeatured)
-                .GroupBy(m => m.Category ?? "Uncategorized")
-                .OrderBy(g => g.Key == "Uncategorized" ? "zzz" : g.Key)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(m => new WorkInstructionCard
-                    {
-                        Title = m.Title,
-                        Subtitle = m.Subtitle ?? "",
-                        IconClass = m.IconClass ?? "",
-                        Category = m.Category ?? "Uncategorized",   // ← add this
-                        URL = $"/Home/Module?id={m.Slug}"
-                    }).ToList()
-                )
-
+                    .Where(m => !m.IsFeatured)
+                    .GroupBy(m => m.Category ?? "Uncategorized")
+                    .OrderBy(g => g.Key == "Uncategorized" ? "zzz" : g.Key)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(m => new WorkInstructionCard
+                        {
+                            Title = m.Title,
+                            Subtitle = m.Subtitle ?? "",
+                            IconClass = m.IconClass ?? "",
+                            Category = m.Category ?? "Uncategorized",
+                            URL = $"/Home/Module?id={m.Slug}"
+                        }).ToList()
+                    )
             };
 
             return View(model);
@@ -93,10 +93,16 @@ namespace Sharepoint.Controllers
             {
                 ModuleTitle = module?.Title ?? "Module",
                 ModuleSubtitle = module?.Subtitle ?? "Work instruction module",
-                ModuleSlug = id ?? "",    // ← add this
+                ModuleSlug = id ?? "",    // ← this must be set
+
                 Files = _context.ModuleFiles
-                                          .Where(f => f.ModuleSlug == id)
-                                          .ToList()
+                            .Where(f => f.ModuleSlug == id && !f.IsDeleted)
+                            .ToList(),
+
+                DeletedFiles = _context.ModuleFiles
+                            .Where(f => f.ModuleSlug == id && f.IsDeleted)
+                            .OrderByDescending(f => f.DeletedAt)
+                            .ToList()
             };
 
             return View("Module", model);
@@ -110,8 +116,12 @@ namespace Sharepoint.Controllers
         [HttpPost]
         public IActionResult UploadFile(IFormFile file, string moduleId, string description)
         {
+            if (string.IsNullOrEmpty(moduleId))
+                return BadRequest("Module ID is missing.");
+
             if (file == null || file.Length == 0)
                 return BadRequest("No file selected.");
+
 
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", moduleId);
             Directory.CreateDirectory(uploadsFolder);
@@ -226,19 +236,17 @@ namespace Sharepoint.Controllers
         [HttpPost]
         public IActionResult DeleteFile(int fileId, string moduleId)
         {
-            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
+            if (string.IsNullOrEmpty(moduleId))
+                return BadRequest("Module ID is missing.");
 
+            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
             if (file != null)
             {
-                // Delete physical file from folder
-                if (System.IO.File.Exists(file.FilePath))
-                    System.IO.File.Delete(file.FilePath);
-
-                // Remove record from DB
-                _context.ModuleFiles.Remove(file);
+                file.IsDeleted = true;
+                file.DeletedAt = DateTime.Now;
+                file.DeletedBy = "Current User";
                 _context.SaveChanges();
             }
-
             return RedirectToAction("Module", new { id = moduleId });
         }
 
@@ -318,6 +326,40 @@ namespace Sharepoint.Controllers
                 _context.SaveChanges();
             }
             return RedirectToAction("WorkInstruction");
+        }
+
+        [HttpPost]
+        public IActionResult RestoreFile(int fileId, string moduleId)
+        {
+            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
+
+            if (file != null)
+            {
+                file.IsDeleted = false;
+                file.DeletedAt = null;
+                file.DeletedBy = null;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Module", new { id = moduleId });
+        }
+
+        [HttpPost]
+        public IActionResult PermanentDeleteFile(int fileId, string moduleId)
+        {
+            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
+
+            if (file != null)
+            {
+                // Now actually delete the physical file
+                if (System.IO.File.Exists(file.FilePath))
+                    System.IO.File.Delete(file.FilePath);
+
+                _context.ModuleFiles.Remove(file);
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Module", new { id = moduleId });
         }
 
 

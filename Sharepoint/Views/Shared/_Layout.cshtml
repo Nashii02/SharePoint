@@ -1,14 +1,4 @@
-﻿@{
-    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
-    var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
-
-    string IsActive(string controller, string action)
-    {
-        return (controller == currentController && action == currentAction)
-            ? "bg-[#1C3667] text-white"
-            : "text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition";
-    }
-}
+﻿
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,55 +12,7 @@
 </head>
 <body>
     <header>
-        <!-- NAVBAR -->
-        <nav class="bg-[#1C3667] text-white shadow-md">
-            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
-
-                <!-- LOGO + TITLE -->
-                <div class="flex items-center gap-3">
-                    <img src="~/images/ITLogo.png" width="35" height="35"/>
-
-                    <h1 class="text-sm font-bold">
-                        IT SOLUTIONS
-                    </h1>
-                </div>
-
-            </div>
-        </nav>
-
-        <!-- MENU -->
-        <div class="bg-[#DDF0DD] py-3 shadow-sm">
-            <div class=" max-w-7xl mx-auto flex items-center justify-between px-4">
-
-                <div class="flex gap-4 pl-20">
-                    <a asp-controller="Home" asp-action="WorkInstruction"
-                       class="px-6 py-2 rounded-md font-bold @IsActive("Home", "WorkInstruction")">
-                        Work Instructions
-                    </a>
-                </div>
-
-                <!-- SEARCH BAR -->
-                <div class="hidden md:flex items-center bg-[#1C3667] rounded-lg px-3 py-2 w-80">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5 text-white"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-
-                    <input type="text"
-                           id="global-search"
-                           placeholder="Search modules..."
-                           oninput="searchModules(this.value)"
-                           class="w-full outline-none bg-[#1C3667] px-2 text-white placeholder-white" />
-                </div>
-            </div>
-        </div>
+        
         
     </header>
     <div class="container-fluid p-0">
@@ -80,8 +22,20 @@
     </div>
 
     <footer class="border-top footer text-muted bg-[#1C3667]">
-        <div class="container">
-            &copy; 2026 - Sharepoint - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="container pl-20">
+            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+
+                <!-- LOGO + TITLE -->
+                <div class="flex items-center gap-3">
+                    <img src="~/images/ITLogo.png" width="32" height="32" />
+
+                    <h1 class="text-xs font-bold text-white">
+                        IT SOLUTIONS
+                    </h1>
+                </div>
+
+            </div>
+            
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

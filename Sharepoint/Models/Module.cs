@@ -29,6 +29,9 @@
         public string? FileSize { get; set; } = "";
         public string Url => FileUrl;
         public int Version { get; set; } = 1;
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        public string? DeletedBy { get; set; }
         public string? OriginalFileName { get; set; }
         public string UploadedDateFormatted => UploadedDate.ToString("MMM dd, yyyy");
     }
@@ -37,7 +40,9 @@
     {
         public string ModuleTitle { get; set; } = "";
         public string ModuleSubtitle { get; set; } = "";
-        public List<ModuleFile> Files { get; set; } = new();
         public string ModuleSlug { get; set; } = "";
+        public List<ModuleFile> Files { get; set; } = new();
+        public List<ModuleFile> DeletedFiles { get; set; } = new();
+        
     }
 }
