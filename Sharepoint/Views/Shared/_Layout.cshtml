@@ -45,14 +45,16 @@
 <body>
     <header>
         <!-- NAVBAR -->
-        <nav class="bg-[#1C3667] text-white shadow-md">
-            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+        <nav class="bg-[#1C3667] text-white shadow-md relative overflow-hidden">
+            <img src="~/images/circuit.png"
+                 class="absolute inset-0 w-full h-full filter brightness-0 invert opacity-10 pointer-events-none"
+                 style="z-index: 0; object-fit: cover; transform: none;" />
 
+            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between relative" style="z-index: 1;">
                 <a href="/Home/WorkInstruction" class="flex items-center gap-3">
                     <img src="~/images/ITLogo.png" width="35" height="35" />
                     <h1 class="text-sm font-bold text-white">IT SOLUTIONS</h1>
                 </a>
-
             </div>
         </nav>
 
@@ -61,33 +63,63 @@
             <div class="max-w-7xl mx-auto flex items-center justify-between px-4">
 
                 <!-- BREADCRUMB -->
-                <nav class="flex items-center gap-1 pl-20" aria-label="Breadcrumb">
-                    @for (int i = 0; i < breadcrumbs.Count; i++)
-                    {
-                        var crumb = breadcrumbs[i];
-                        bool isLast = i == breadcrumbs.Count - 1;
+                <nav class="flex items-center gap-1" aria-label="Breadcrumb">
 
-                        if (isLast)
-                        {
-                            <span class="px-3 py-2 rounded-md font-bold text-sm bg-[#1C3667] text-white">
-                                @crumb.Label
-                            </span>
-                        }
-                        else
-                        {
-                            <a href="@crumb.Url"
-                               class="px-3 py-2 rounded-md font-bold text-sm hover:bg-[#1C3667] hover:!text-white transition" style="color:#1C3667;" >
-                                @crumb.Label
-                            </a>
+                    <!-- Back -->
+                    <button id="backBtn" onclick="handleBack()" title="Go back"
+                            class="flex items-center justify-center w-8 h-8 rounded-full border border-[#C5DFC5] bg-[#C5DFC5] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                    </button>
 
-                            <!-- Separator -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                 stroke-linejoin="round" class="w-3 h-3 text-[#1C3667] opacity-40 flex-shrink-0">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
+                    <!-- Forward — hidden until there's forward history -->
+                    <button id="forwardBtn" onclick="handleForward()" title="Go forward"
+                            class="hidden items-center justify-center w-8 h-8 rounded-full border border-[#1C3667] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+
+                    <!-- Refresh — always visible, always in this spot (slides right when forward appears) -->
+                    <button id="refreshBtn" onclick="location.reload()" title="Refresh page"
+                            class="flex items-center justify-center w-8 h-8 rounded-full border border-[#1C3667] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <polyline points="23 4 23 10 17 10" />
+                            <polyline points="1 20 1 14 7 14" />
+                            <path d="M3.51 9a9 9 0 0 1 14.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                    </button>
+
+                    <div class="flex items-center gap-1 pl-20">
+                        @for (int i = 0; i < breadcrumbs.Count; i++)
+                        {
+                            var crumb = breadcrumbs[i];
+                            bool isLast = i == breadcrumbs.Count - 1;
+
+                            if (isLast)
+                            {
+                                <span class="px-3 py-2 rounded-md font-bold text-sm bg-[#1C3667] text-white">
+                                    @crumb.Label
+                                </span>
+                            }
+                            else
+                            {
+                                <a href="@crumb.Url"
+                                   onclick="registerNavigation()"
+                                   class="px-3 py-2 rounded-md font-bold text-sm hover:bg-[#1C3667] hover:!text-white transition" style="color:#1C3667;">
+                                    @crumb.Label
+                                </a>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                     stroke-linejoin="round" class="w-3 h-3 text-[#1C3667] opacity-40 flex-shrink-0">
+                                    <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                            }
                         }
-                    }
+                    </div>
                 </nav>
 
                 <!-- SEARCH BAR -->
@@ -111,8 +143,14 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted" style="background:#1C3667;">
-        <a href="/Home/WorkInstruction" class="flex items-center gap-3 translate-x-5">
+
+    <footer class="border-top footer text-muted relative overflow-hidden" style="background:#1C3667;">
+        <!-- Circuit background -->
+        <img src="~/images/circuit.png"
+             class="absolute inset-0 w-full h-full filter brightness-0 invert opacity-10 pointer-events-none"
+             style="z-index: 0; object-fit: cover; object-position: center top;" />
+
+        <a href="/Home/WorkInstruction" class="flex items-center gap-3 translate-x-5 relative" style="z-index: 1;">
             <img src="~/images/ITLogo.png" width="35" height="35" />
             <center><h1 class="text-sm font-bold text-white">IT SOLUTIONS</h1></center>
         </a>
@@ -125,3 +163,65 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+
+<script>
+    const backBtn = document.getElementById('backBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+
+    if (!sessionStorage.getItem('historyStack')) {
+        sessionStorage.setItem('historyStack', '0');
+    }
+
+    function updateButtons() {
+        const stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+        const forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+
+        // Back: always visible, dimmed when nothing to go back to
+        backBtn.style.opacity = stack <= 0 ? '0.35' : '1';
+        backBtn.style.pointerEvents = stack <= 0 ? 'none' : 'auto';
+
+        // Forward: only appears when there's forward history
+        if (forward > 0) {
+            forwardBtn.classList.remove('hidden');
+            forwardBtn.classList.add('flex');
+        } else {
+            forwardBtn.classList.add('hidden');
+            forwardBtn.classList.remove('flex');
+        }
+    }
+
+    function handleBack() {
+        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+        let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+        if (stack <= 0) return;
+        stack--;
+        forward++;
+        sessionStorage.setItem('historyStack', stack.toString());
+        sessionStorage.setItem('forwardStack', forward.toString());
+        updateButtons();
+        history.back();
+    }
+
+    function handleForward() {
+        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+        let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+        if (forward <= 0) return;
+        stack++;
+        forward--;
+        sessionStorage.setItem('historyStack', stack.toString());
+        sessionStorage.setItem('forwardStack', forward.toString());
+        updateButtons();
+        history.forward();
+    }
+
+    function registerNavigation() {
+        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+        stack++;
+        sessionStorage.setItem('historyStack', stack.toString());
+        sessionStorage.setItem('forwardStack', '0');
+        updateButtons();
+    }
+
+    updateButtons();
+</script>

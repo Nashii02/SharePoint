@@ -21,12 +21,34 @@
 
 <div class="min-h-screen bg-[#ECFFEC]">
     <section class="bg-[#1C3667] text-white relative overflow-hidden" style="min-height: 237px;">
-        <div class="max-w-7xl mx-auto px-6 py-10">
+
+        <img src="~/images/circuit.png"
+             class="absolute inset-0 w-full h-full object-cover filter brightness-0 invert opacity-10"
+             style="z-index: 0;" />
+
+        <!-- Circuit masked to logo shape -->
+        <div class="absolute right-10 hidden md:block"
+             style="z-index: 1; width: 320px; height: 320px; top: 50%; transform: translateY(-38%);
+                mask-image: url('/images/NoBGLogo.png');
+                mask-size: contain;
+                mask-repeat: no-repeat;
+                mask-position: center;
+                opacity: 0.25;">
+            <img src="~/images/circuit.png"
+                 style="height: 100%; width: 100%; object-fit: cover;"
+                 class="filter brightness-0 invert" />
+        </div>
+
+        <!-- Logo outline on top -->
+        <div class="absolute right-10 hidden md:block" style="z-index: 2; top: 50%; transform: translateY(-38%); opacity: 0.15;">
+            <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert" />
+        </div>
+
+        <!-- Content -->
+        <div class="max-w-7xl mx-auto px-6 py-10 relative" style="z-index: 2; min-height: 237px;">
             <div class="max-w-xl pl-20">
                 <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">@categoryName.ToUpper()</h1>
             </div>
-
-            <!-- Dots fixed to bottom of section -->
             <div class="absolute bottom-10 space-y-3" style="left: 341px;">
                 <div class="flex gap-3">
                     @for (int i = 0; i < 5; i++)
@@ -41,14 +63,8 @@
                     }
                 </div>
             </div>
-            <div class="absolute left-0 bottom-50 opacity-10 hidden md:block h-40">
-                <img src="~/images/circuit.png" style="height: 500px; width: 850px;" class="filter brightness-0 invert translate-y-12 translate-x-0.5" />
-            </div>
-
-            <div class="absolute right-10 bottom-50 opacity-10 hidden md:block h-40">
-                <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert translate-y-12" />
-            </div>
         </div>
+
     </section>
 
     <!-- MAIN -->
@@ -79,7 +95,7 @@
 
             <!-- LEFT: Upload Form -->
             <div class="w-80 flex-shrink-0 bg-white border border-[#c8e6d4] rounded-2xl shadow-sm p-6">
-                <h3 class="text-base font-bold text-[#1C3667] mb-5 pb-4 border-b border-[#c8e6d4]">
+                <h3 class="text-base font-bold text-white mb-5 pb-4 border-b border-[#c8e6d4] bg-[#1C3667] -mx-6 -mt-6 px-6 py-4 rounded-t-2xl">
                     Upload New Document
                 </h3>
 
@@ -92,12 +108,12 @@
                         <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentTitle">Document Title</label>
                         <input type="text" id="documentTitle" name="documentTitle"
                                class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all"
-                               placeholder="e.g. VPN Config Guide v2" required />
+                               placeholder="Title..." required />
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentDescription">
-                            Description <span class="font-normal text-gray-400">(optional)</span>
+                            Description <span class="font-normal font-semibold text-gray-400">(optional)<span class="text-danger" style="font-size: larger; font-weight: 500;">*</span></span>
                         </label>
                         <textarea id="documentDescription" name="documentDescription"
                                   class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all resize-none"
@@ -158,9 +174,9 @@
 
             <!-- RIGHT: File List -->
             <div class="flex-1 bg-white border border-[#c8e6d4] rounded-2xl shadow-sm">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-[#c8e6d4]">
-                    <h3 class="text-base font-bold text-[#1C3667]">Uploaded Documents</h3>
-                    <span class="text-xs font-semibold bg-[#ECFFEC] text-[#1C3667] border border-[#c8e6d4] px-2.5 py-1 rounded-full">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-[#c8e6d4] bg-[#1C3667] rounded-t-2xl">
+                    <h3 class="text-base font-bold text-white">Uploaded Documents</h3>
+                    <span class="text-xs font-semibold bg-white/10 text-white border border-white/20 px-2.5 py-1 rounded-full">
                         @docs.Count file@(docs.Count != 1 ? "s" : "")
                     </span>
                 </div>

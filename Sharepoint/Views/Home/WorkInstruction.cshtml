@@ -183,7 +183,33 @@
 <div class="min-h-screen bg-[#ECFFEC]">
 
     <section class="bg-[#1C3667] text-white relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6 py-10">
+
+        <!-- Circuit as full background -->
+        <img src="~/images/circuit.png"
+             class="absolute inset-0 w-full h-full object-cover filter brightness-0 invert opacity-10"
+             style="z-index: 0;" />
+
+        <!-- Circuit masked to logo shape -->
+        <div class="absolute right-10 hidden md:block"
+             style="z-index: 1; width: 320px; height: 320px; top: 50%; transform: translateY(-38%);
+                mask-image: url('/images/NoBGLogo.png');
+                mask-size: contain;
+                mask-repeat: no-repeat;
+                mask-position: center;
+                opacity: 0.25;">
+            <img src="~/images/circuit.png"
+                 style="height: 100%; width: 100%; object-fit: cover;"
+                 class="filter brightness-0 invert" />
+        </div>
+
+        <!-- Logo outline on top -->
+        <div class="absolute right-10 hidden md:block" style="z-index: 2; top: 50%; transform: translateY(-38%); opacity: 0.15;">
+            <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert" />
+        </div>
+
+        <!-- Content -->
+        <div class="max-w-7xl mx-auto px-6 py-10 relative" style="z-index: 2;">
+
             <div class="max-w-xl pl-20">
                 <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">WORK <br />INSTRUCTIONS</h1>
                 <div class="mt-8 space-y-3 flex flex-col items-center">
@@ -201,13 +227,8 @@
                     </div>
                 </div>
             </div>
-            <div class="absolute left-0 bottom-50 opacity-10 hidden md:block h-40">
-                <img src="~/images/circuit.png" style="height: 500px; width: 850px;" class="filter brightness-0 invert translate-y-12 translate-x-0.5" />
-            </div>
-            <div class="absolute right-10 bottom-50 opacity-10 hidden md:block h-40">
-                <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert translate-y-12" />
-            </div>
         </div>
+
     </section>
 
     @if (TempData["SuccessMessage"] != null)
@@ -468,6 +489,13 @@
         document.querySelectorAll('.delete-form').forEach(form => {
             form.addEventListener('submit', e => {
                 if (!confirm('Delete this category and all its documents?')) e.preventDefault();
+            });
+        });
+
+        // Inside your existing cards script
+        document.querySelectorAll('.wi-card').forEach(card => {
+            card.addEventListener('click', function () {
+                registerNavigation();
             });
         });
     </script>
