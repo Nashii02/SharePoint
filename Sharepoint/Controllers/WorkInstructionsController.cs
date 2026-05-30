@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sharepoint.Data;
 using Sharepoint.Models;
@@ -31,6 +32,7 @@ namespace Sharepoint.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadFile(string category, string documentTitle,
                                                      string documentDescription, IFormFile pdfFile)

@@ -3,6 +3,7 @@
     string category = ViewBag.Category ?? "general";
     string categoryName = ViewBag.CategoryName as string ?? category;
     var docs = ViewBag.Documents as List<Sharepoint.Models.WorkDocument> ?? new();
+    bool isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
 }
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +27,6 @@
              class="absolute inset-0 w-full h-full object-cover filter brightness-0 invert opacity-10"
              style="z-index: 0;" />
 
-        <!-- Circuit masked to logo shape -->
         <div class="absolute right-10 hidden md:block"
              style="z-index: 1; width: 320px; height: 320px; top: 50%; transform: translateY(-38%);
                 mask-image: url('/images/NoBGLogo.png');
@@ -39,12 +39,10 @@
                  class="filter brightness-0 invert" />
         </div>
 
-        <!-- Logo outline on top -->
         <div class="absolute right-10 hidden md:block" style="z-index: 2; top: 50%; transform: translateY(-38%); opacity: 0.15;">
             <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert" />
         </div>
 
-        <!-- Content -->
         <div class="max-w-7xl mx-auto px-6 py-10 relative" style="z-index: 2; min-height: 237px;">
             <div class="max-w-xl pl-20">
                 <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">@categoryName.ToUpper()</h1>
@@ -64,7 +62,6 @@
                 </div>
             </div>
         </div>
-
     </section>
 
     <!-- MAIN -->
@@ -93,83 +90,112 @@
 
         <div class="flex gap-6 items-start">
 
-            <!-- LEFT: Upload Form -->
-            <div class="w-80 flex-shrink-0 bg-white border border-[#c8e6d4] rounded-2xl shadow-sm p-6">
-                <h3 class="text-base font-bold text-white mb-5 pb-4 border-b border-[#c8e6d4] bg-[#1C3667] -mx-6 -mt-6 px-6 py-4 rounded-t-2xl">
-                    Upload New Document
-                </h3>
+            <!-- LEFT: Upload Form OR Sign-in prompt -->
+            <div class="w-80 flex-shrink-0 bg-white border border-[#c8e6d4] rounded-2xl shadow-sm overflow-hidden">
+                <div class="bg-[#1C3667] px-6 py-4 rounded-t-2xl">
+                    <h3 class="text-base font-bold text-white">Upload New Document</h3>
+                </div>
 
-                <form method="post" enctype="multipart/form-data" id="uploadForm"
-                      asp-controller="WorkInstructions" asp-action="UploadFile">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="category" value="@category" />
+                @if (isAuthenticated)
+                {
+                    <div class="p-6">
+                        <form method="post" enctype="multipart/form-data" id="uploadForm"
+                              asp-controller="WorkInstructions" asp-action="UploadFile">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="category" value="@category" />
 
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentTitle">Document Title</label>
-                        <input type="text" id="documentTitle" name="documentTitle"
-                               class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all"
-                               placeholder="Title..." required />
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentDescription">
-                            Description <span class="font-normal font-semibold text-gray-400">(optional)<span class="text-danger" style="font-size: larger; font-weight: 500;">*</span></span>
-                        </label>
-                        <textarea id="documentDescription" name="documentDescription"
-                                  class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all resize-none"
-                                  placeholder="Brief description..." rows="2"></textarea>
-                    </div>
-
-                    <div class="mb-5">
-                        <label class="block text-xs font-semibold text-[#1C3667] mb-1.5">PDF File</label>
-                        <div class="relative border-2 border-dashed border-[#c8e6d4] rounded-xl bg-[#ECFFEC] cursor-pointer hover:border-[#1C3667] transition-colors" id="dropzone">
-                            <input type="file" name="pdfFile" id="pdfFile" accept=".pdf"
-                                   class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required />
-                            <div class="flex flex-col items-center text-center py-6 px-3 pointer-events-none" id="dropzoneContent">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-[#1C3667] opacity-50 mb-2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <p class="text-xs font-semibold text-[#1C3667]">Drop PDF here</p>
-                                <p class="text-xs text-gray-400 mt-0.5">or <span class="underline">browse</span></p>
-                                <p class="text-xs text-gray-400 mt-1">Max 50 MB</p>
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentTitle">Document Title</label>
+                                <input type="text" id="documentTitle" name="documentTitle"
+                                       class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all"
+                                       placeholder="Title..." required />
                             </div>
-                            <div class="hidden items-center gap-3 py-4 px-3 pointer-events-none" id="dropzonePreview">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-[#1C3667] flex-shrink-0">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                    <polyline points="14 2 14 8 20 8" />
-                                </svg>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-xs font-semibold text-[#1C3667] truncate" id="previewName"></p>
-                                    <p class="text-xs text-gray-400" id="previewSize"></p>
+
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-[#1C3667] mb-1.5" for="documentDescription">
+                                    Description <span class="font-normal text-gray-400">(optional)<span class="text-danger" style="font-size: larger; font-weight: 500;">*</span></span>
+                                </label>
+                                <textarea id="documentDescription" name="documentDescription"
+                                      class="w-full px-3 py-2 text-sm border border-[#c8e6d4] rounded-lg outline-none focus:border-[#1C3667] transition-all resize-none"
+                                      placeholder="Brief description..." rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-5">
+                                <label class="block text-xs font-semibold text-[#1C3667] mb-1.5">PDF File</label>
+                                <div class="relative border-2 border-dashed border-[#c8e6d4] rounded-xl bg-[#ECFFEC] cursor-pointer hover:border-[#1C3667] transition-colors" id="dropzone">
+                                    <input type="file" name="pdfFile" id="pdfFile" accept=".pdf"
+                                           class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required />
+                                    <div class="flex flex-col items-center text-center py-6 px-3 pointer-events-none" id="dropzoneContent">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-[#1C3667] opacity-50 mb-2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        <p class="text-xs font-semibold text-[#1C3667]">Drop PDF here</p>
+                                        <p class="text-xs text-gray-400 mt-0.5">or <span class="underline">browse</span></p>
+                                        <p class="text-xs text-gray-400 mt-1">Max 50 MB</p>
+                                    </div>
+                                    <div class="hidden items-center gap-3 py-4 px-3 pointer-events-none" id="dropzonePreview">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-[#1C3667] flex-shrink-0">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                        </svg>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-[#1C3667] truncate" id="previewName"></p>
+                                            <p class="text-xs text-gray-400" id="previewSize"></p>
+                                        </div>
+                                        <button type="button" id="removeFile"
+                                                class="pointer-events-auto flex-shrink-0 p-1 rounded border border-[#c8e6d4] bg-white text-red-400 hover:bg-red-50 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
-                                <button type="button" id="removeFile"
-                                        class="pointer-events-auto flex-shrink-0 p-1 rounded border border-[#c8e6d4] bg-white text-red-400 hover:bg-red-50 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
-                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                        <line x1="6" y1="6" x2="18" y2="18" />
+                            </div>
+
+                            <div class="flex gap-2">
+                                <a href="/Home/WorkInstruction" class="flex-1 text-center px-3 py-2 text-sm font-semibold text-[#1C3667] bg-white border border-[#c8e6d4] rounded-lg hover:bg-[#ECFFEC] transition-colors">
+                                    Cancel
+                                </a>
+                                <button type="submit" id="submitBtn"
+                                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#1C3667] rounded-lg hover:bg-[#162d57] transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
                                     </svg>
+                                    Upload
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
-
-                    <div class="flex gap-2">
-                        <a href="/Home/WorkInstruction" class="flex-1 text-center px-3 py-2 text-sm font-semibold text-[#1C3667] bg-white border border-[#c8e6d4] rounded-lg hover:bg-[#ECFFEC] transition-colors">
-                            Cancel
-                        </a>
-                        <button type="submit" id="submitBtn"
-                                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#1C3667] rounded-lg hover:bg-[#162d57] transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
+                }
+                else
+                {
+                    <!-- Anonymous: sign-in prompt -->
+                    <div class="p-6 flex flex-col items-center text-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-[#ECFFEC] border-2 border-[#c8e6d4] flex items-center justify-center mt-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 opacity-60">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                             </svg>
-                            Upload
-                        </button>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#1C3667]">Sign in to upload</p>
+                            <p class="text-xs text-gray-400 mt-1">You need to be logged in to upload documents to this category.</p>
+                        </div>
+                        <a href="/Account/Login"
+                           class="w-full text-center px-4 py-2.5 text-sm font-semibold text-white bg-[#1C3667] rounded-lg hover:bg-[#162d57] transition-colors">
+                            Sign in
+                        </a>
+                        <a href="/Account/Register"
+                           class="w-full text-center px-4 py-2.5 text-sm font-semibold text-[#1C3667] bg-white border border-[#c8e6d4] rounded-lg hover:bg-[#ECFFEC] transition-colors">
+                            Create account
+                        </a>
                     </div>
-                </form>
+                }
             </div>
 
             <!-- RIGHT: File List -->
@@ -245,6 +271,7 @@
                         </div>
 
                                 <div class="col-span-2 flex items-center justify-end gap-1.5">
+                                    <!-- Download: available to everyone -->
                                     <a href="@Url.Action("Download", "WorkInstructions", new { id = doc.Id })"
                                        title="Download"
                                        class="stop-prop flex items-center justify-center w-8 h-8 rounded-lg border border-[#c8e6d4] bg-white text-[#1C3667] hover:bg-[#ECFFEC] hover:border-[#1C3667] transition-colors">
@@ -254,27 +281,36 @@
                                             <line x1="12" y1="15" x2="12" y2="3" />
                                         </svg>
                                     </a>
-                                    <form method="post" asp-controller="WorkInstructions" asp-action="Delete"
-                                          onsubmit="return confirm('Delete this document?')"
-                                          class="stop-prop" style="display:inline;">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@doc.Id" />
-                                        <input type="hidden" name="category" value="@category" />
-                                        <button type="submit" title="Delete"
-                                                class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#c8e6d4] bg-white text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                                                <polyline points="3 6 5 6 21 6" />
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                                <path d="M10 11v6" />
-                                                <path d="M14 11v6" />
-                                                <path d="M9 6V4h6v2" />
-                                            </svg>
-                                        </button>
-                                    </form>
-                                </div>
 
+                                    <!-- Delete: logged-in users only -->
+                            @if (isAuthenticated)
+                                    {
+                                        <form method="post" asp-controller="WorkInstructions" asp-action="Delete"
+                                              onsubmit="return confirm('Delete this document?')"
+                                              class="stop-prop" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@doc.Id" />
+                                            <input type="hidden" name="category" value="@category" />
+                                            <button type="submit" title="Delete"
+                                                    class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#c8e6d4] bg-white text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                                    <polyline points="3 6 5 6 21 6" />
+                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                    <path d="M10 11v6" />
+                                                    <path d="M14 11v6" />
+                                                    <path d="M9 6V4h6v2" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <!-- Placeholder to keep layout aligned -->
+                                        <div class="w-8 h-8"></div>
+                                    }
+                                </div>
                             </div>
-                                        }
+                        }
                     </div>
                 }
             </div>
@@ -319,77 +355,79 @@
                     <p class="text-sm text-gray-400 font-medium">Loading document…</p>
                 </div>
                 <iframe id="pdfFrame" src="" class="w-full h-full border-0 opacity-0 transition-opacity duration-300"
-                        style="user-select:none;">
-                </iframe>
+                        style="user-select:none;"></iframe>
             </div>
         </div>
     </div>
-
 </div>
 
-<script>
-    // --- Dropzone ---
-    const dropzone    = document.getElementById('dropzone');
-    let fileInput = document.getElementById('pdfFile'); fileInput   = document.getElementById('pdfFile');
-    const content     = document.getElementById('dropzoneContent');
-    const preview     = document.getElementById('dropzonePreview');
-    const previewName = document.getElementById('previewName');
-    const previewSize = document.getElementById('previewSize');
-    const removeBtn   = document.getElementById('removeFile');
+@* Replace the entire <script> block at the bottom with this: *@
 
-    function formatSize(b) {
-        return b < 1024 * 1024 ? (b / 1024).toFixed(1) + ' KB' : (b / (1024 * 1024)).toFixed(1) + ' MB';
-    }
+@if (isAuthenticated)
+{
+    <script>
+        // --- Dropzone ---
+        const dropzone    = document.getElementById('dropzone');
+        let fileInput     = document.getElementById('pdfFile');
+        const content     = document.getElementById('dropzoneContent');
+        const preview     = document.getElementById('dropzonePreview');
+        const previewName = document.getElementById('previewName');
+        const previewSize = document.getElementById('previewSize');
+        const removeBtn   = document.getElementById('removeFile');
 
-    function showPreview(file) {
-        previewName.textContent = file.name;
-        previewSize.textContent = formatSize(file.size);
-        content.classList.add('hidden');
-        preview.classList.remove('hidden');
-        preview.classList.add('flex');
-        fileInput.classList.add('pointer-events-none');   // 👈 disable input when file shown
-    }
+        function formatSize(b) {
+            return b < 1024 * 1024 ? (b / 1024).toFixed(1) + ' KB' : (b / (1024 * 1024)).toFixed(1) + ' MB';
+        }
 
-    function resetDropzone() {
-        const newInput = fileInput.cloneNode(true);
-        fileInput.parentNode.replaceChild(newInput, fileInput);
-        fileInput = document.getElementById('pdfFile');
-        fileInput.classList.remove('pointer-events-none'); // 👈 re-enable input after reset
+        function showPreview(file) {
+            previewName.textContent = file.name;
+            previewSize.textContent = formatSize(file.size);
+            content.classList.add('hidden');
+            preview.classList.remove('hidden');
+            preview.classList.add('flex');
+            fileInput.classList.add('pointer-events-none');
+        }
+
+        function resetDropzone() {
+            const newInput = fileInput.cloneNode(true);
+            fileInput.parentNode.replaceChild(newInput, fileInput);
+            fileInput = document.getElementById('pdfFile');
+            fileInput.classList.remove('pointer-events-none');
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) showPreview(this.files[0]);
+            });
+            content.classList.remove('hidden');
+            preview.classList.add('hidden');
+            preview.classList.remove('flex');
+        }
 
         fileInput.addEventListener('change', function () {
             if (this.files && this.files[0]) showPreview(this.files[0]);
         });
+        removeBtn.addEventListener('click', resetDropzone);
+        dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('border-[#1C3667]'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-[#1C3667]'));
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.classList.remove('border-[#1C3667]');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                showPreview(file);
+            }
+        });
 
-        content.classList.remove('hidden');
-        preview.classList.add('hidden');
-        preview.classList.remove('flex');
-    }
+        document.getElementById('uploadForm').addEventListener('submit', function () {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Uploading…`;
+        });
+    </script>
+}
 
-    fileInput.addEventListener('change', function () {
-        if (this.files && this.files[0]) showPreview(this.files[0]);
-    });
-    removeBtn.addEventListener('click', resetDropzone);
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('border-[#1C3667]'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-[#1C3667]'));
-    dropzone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropzone.classList.remove('border-[#1C3667]');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type === 'application/pdf') {
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            fileInput.files = dt.files;
-            showPreview(file);
-        }
-    });
-
-    document.getElementById('uploadForm').addEventListener('submit', function () {
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerHTML = `<svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Uploading…`;
-    });
-
-    // --- PDF Modal ---
+<script>
     const pdfModal   = document.getElementById('pdfModal');
     const pdfFrame   = document.getElementById('pdfFrame');
     const pdfLoading = document.getElementById('pdfLoading');
@@ -399,10 +437,7 @@
         document.getElementById('modalDownload').href = downloadUrl;
         pdfFrame.classList.add('opacity-0');
         pdfLoading.style.display = 'flex';
-
-        // Add #toolbar=1 keeps print, removes highlighting ability
-        pdfFrame.src = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'inline=true#toolbar=1&navpanes=0&scrollbar=1&statusbar=0&messages=0&scrollbar=1';
-
+        pdfFrame.src = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'inline=true#toolbar=1&navpanes=0&scrollbar=1&statusbar=0&messages=0';
         pdfModal.classList.remove('hidden');
         pdfModal.classList.add('flex');
         document.body.style.overflow = 'hidden';
@@ -420,48 +455,40 @@
         pdfFrame.classList.remove('opacity-0');
     });
 
-    // Row clicks → open modal
     document.querySelectorAll('.doc-row').forEach(row => {
         row.addEventListener('click', function () {
             openPdfModal(this.dataset.title, this.dataset.url);
         });
     });
 
-    // Stop download/delete from bubbling up to the row
     document.querySelectorAll('.stop-prop').forEach(el => {
         el.addEventListener('click', e => e.stopPropagation());
     });
 
-    // Close button
     document.getElementById('modalClose').addEventListener('click', closePdfModal);
 
-    // Close on backdrop click
     pdfModal.addEventListener('click', function (e) {
         if (e.target === pdfModal) closePdfModal();
     });
 
-    // Close on Escape
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closePdfModal();
     });
 
-        // --- Document search filter ---
+    // --- Search filter ---
     const searchInput = document.getElementById('globalSearch');
     if (searchInput) {
         searchInput.addEventListener('input', function () {
             const query = this.value.toLowerCase().trim();
             const rows = document.querySelectorAll('.doc-row');
             let visible = 0;
-
             rows.forEach(row => {
                 const title = row.dataset.title?.toLowerCase() ?? '';
                 const match = !query || title.includes(query);
                 row.style.display = match ? '' : 'none';
                 if (match) visible++;
             });
-
-            // Optional: show a "no results" message
-            let noMsg = document.getElementById('noDocsMsg');
+            const noMsg = document.getElementById('noDocsMsg');
             if (noMsg) noMsg.classList.toggle('hidden', visible > 0);
         });
     }

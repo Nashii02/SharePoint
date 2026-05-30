@@ -45,16 +45,40 @@
 <body>
     <header>
         <!-- NAVBAR -->
-        <nav class="bg-[#1C3667] text-white shadow-md relative overflow-hidden">
-            <img src="~/images/circuit.png"
-                 class="absolute inset-0 w-full h-full filter brightness-0 invert opacity-10 pointer-events-none"
-                 style="z-index: 0; object-fit: cover; transform: none;" />
-
-            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between relative" style="z-index: 1;">
+        <nav class="bg-[#1C3667] text-white shadow-md" style="position: relative; z-index: 1;">
+            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
                 <a href="/Home/WorkInstruction" class="flex items-center gap-3">
                     <img src="~/images/ITLogo.png" width="35" height="35" />
                     <h1 class="text-sm font-bold text-white">IT SOLUTIONS</h1>
                 </a>
+
+                <!-- Right side: Apps + Profile -->
+                <div class="flex items-center gap-2">
+                    <button id="appsBtn" title="Microsoft 365 apps" aria-label="Microsoft 365 apps"
+                            class="flex items-center justify-center w-9 h-9 rounded-full border border-white/30 text-white hover:bg-white/15 transition-colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                        </svg>
+                    </button>
+                    <!-- Profile avatar -->
+                    <button id="profileBtn" title="Account"
+                            class="w-9 h-9 rounded-full bg-[#DDF0DD] text-[#1C3667] text-xs font-bold flex items-center justify-center border border-white/30 hover:opacity-85 transition-opacity cursor-pointer">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            @(User.Identity.Name?.Length > 0 ? User.Identity.Name.Substring(0, 2).ToUpper() : "?")
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        }
+                    </button>
+                </div>
             </div>
         </nav>
 
@@ -64,8 +88,6 @@
 
                 <!-- BREADCRUMB -->
                 <nav class="flex items-center gap-1" aria-label="Breadcrumb">
-
-                    <!-- Back -->
                     <button id="backBtn" onclick="handleBack()" title="Go back"
                             class="flex items-center justify-center w-8 h-8 rounded-full border border-[#C5DFC5] bg-[#C5DFC5] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -74,7 +96,6 @@
                         </svg>
                     </button>
 
-                    <!-- Forward — hidden until there's forward history -->
                     <button id="forwardBtn" onclick="handleForward()" title="Go forward"
                             class="hidden items-center justify-center w-8 h-8 rounded-full border border-[#1C3667] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -83,7 +104,6 @@
                         </svg>
                     </button>
 
-                    <!-- Refresh — always visible, always in this spot (slides right when forward appears) -->
                     <button id="refreshBtn" onclick="location.reload()" title="Refresh page"
                             class="flex items-center justify-center w-8 h-8 rounded-full border border-[#1C3667] text-[#1C3667] hover:bg-[#1C3667] hover:text-white transition-colors mr-2">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -132,10 +152,116 @@
                     <input type="text" id="globalSearch" placeholder="Search..."
                            class="w-full outline-none bg-[#1C3667] px-2 text-white placeholder-white/50" />
                 </div>
-
             </div>
         </div>
     </header>
+
+    <!-- DROPDOWNS — rendered at body level to avoid clipping -->
+    <!-- Apps dropdown -->
+    <div id="appsDropdown"
+         style="display:none; position:fixed; background:white; border-radius:12px; border:1px solid #e5e7eb; width:256px; z-index:99999; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+        <div style="padding:12px 16px; border-bottom:1px solid #f3f4f6; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em;">
+            Microsoft 365
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:12px;">
+            <a href="https://www.office.com/launch/word" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-word-2019.png" width="36" height="36" alt="Word" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">Word</span>
+            </a>
+            <a href="https://www.office.com/launch/excel" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-excel-2019.png" width="36" height="36" alt="Excel" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">Excel</span>
+            </a>
+            <a href="https://www.office.com/launch/powerpoint" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-powerpoint-2019.png" width="36" height="36" alt="PowerPoint" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">PowerPoint</span>
+            </a>
+            <a href="https://outlook.office.com/mail" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-outlook-2019.png" width="36" height="36" alt="Outlook" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">Outlook</span>
+            </a>
+            <a href="https://teams.microsoft.com" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-teams.png" width="36" height="36" alt="Teams" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">Teams</span>
+            </a>
+            <a href="https://www.office.com/launch/sharepoint" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-sharepoint-2019.png" width="36" height="36" alt="SharePoint" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">SharePoint</span>
+            </a>
+            <a href="https://onedrive.live.com" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-onedrive-2019.png" width="36" height="36" alt="OneDrive" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">OneDrive</span>
+            </a>
+            <a href="https://www.onenote.com/notebooks" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <img src="https://img.icons8.com/color/48/microsoft-onenote-2019.png" width="36" height="36" alt="OneNote" />
+                <span style="font-size:11px;font-weight:500;color:#374151;">OneNote</span>
+            </a>
+            <a href="https://www.office.com/apps" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                <div style="width:36px;height:36px;border-radius:6px;background:#1C3667;display:flex;align-items:center;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                </div>
+                <span style="font-size:11px;font-weight:500;color:#374151;">All apps</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Profile dropdown -->
+    <div id="profileDropdown"
+         style="display:none; position:fixed; background:white; border-radius:12px; border:1px solid #e5e7eb; width:240px; z-index:99999; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <!-- Logged in header -->
+            <div style="padding:12px 16px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:12px;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#DDF0DD;color:#1C3667;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    @(User.Identity.Name?.Length > 0 ? User.Identity.Name.Substring(0, 2).ToUpper() : "?")
+                </div>
+                <div style="min-width:0;">
+                    <p style="margin:0;font-size:13px;font-weight:600;color:#1C3667;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@User.Identity.Name</p>
+                    <p style="margin:2px 0 0;font-size:11px;color:#9ca3af;">Logged in</p>
+                </div>
+            </div>
+            <div style="padding:4px 0;">
+                <a href="/Account/Profile" style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#374151;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    View profile
+                </a>
+                <a href="/Account/Settings" style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#374151;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                    Settings
+                </a>
+                <hr style="border:none;border-top:1px solid #f3f4f6;margin:4px 0;" />
+                <a href="/Account/Logout" style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#dc2626;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    Sign out
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Anonymous header -->
+            <div style="padding:16px; border-bottom:1px solid #f3f4f6; text-align:center;">
+                <div style="width:48px;height:48px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                </div>
+                <p style="margin:0;font-size:13px;font-weight:600;color:#1C3667;">Browsing anonymously</p>
+                <p style="margin:4px 0 0;font-size:11px;color:#9ca3af;">Sign in to upload files</p>
+            </div>
+            <div style="padding:12px 16px;">
+                <a href="/Account/Login" style="display:block;text-align:center;padding:9px;background:#1C3667;color:white;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;" onmouseover="this.style.background='#16305a'" onmouseout="this.style.background='#1C3667'">
+                    Sign in
+                </a>
+                <a href="/Account/Register" style="display:block;text-align:center;padding:9px;margin-top:6px;border:1px solid #e5e7eb;color:#374151;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                    Create account
+                </a>
+            </div>
+        }
+    </div>
 
     <div style="padding:0; margin:0; width:100%;">
         <main role="main" class="pb-3">
@@ -166,62 +292,103 @@
 
 
 <script>
-    const backBtn = document.getElementById('backBtn');
-    const forwardBtn = document.getElementById('forwardBtn');
+        const backBtn = document.getElementById('backBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
 
-    if (!sessionStorage.getItem('historyStack')) {
-        sessionStorage.setItem('historyStack', '0');
-    }
-
-    function updateButtons() {
-        const stack = parseInt(sessionStorage.getItem('historyStack') || '0');
-        const forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
-
-        // Back: always visible, dimmed when nothing to go back to
-        backBtn.style.opacity = stack <= 0 ? '0.35' : '1';
-        backBtn.style.pointerEvents = stack <= 0 ? 'none' : 'auto';
-
-        // Forward: only appears when there's forward history
-        if (forward > 0) {
-            forwardBtn.classList.remove('hidden');
-            forwardBtn.classList.add('flex');
-        } else {
-            forwardBtn.classList.add('hidden');
-            forwardBtn.classList.remove('flex');
+        if (!sessionStorage.getItem('historyStack')) {
+            sessionStorage.setItem('historyStack', '0');
         }
-    }
 
-    function handleBack() {
-        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
-        let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
-        if (stack <= 0) return;
-        stack--;
-        forward++;
-        sessionStorage.setItem('historyStack', stack.toString());
-        sessionStorage.setItem('forwardStack', forward.toString());
+        function updateButtons() {
+            const stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+            const forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+            backBtn.style.opacity = stack <= 0 ? '0.35' : '1';
+            backBtn.style.pointerEvents = stack <= 0 ? 'none' : 'auto';
+            if (forward > 0) {
+                forwardBtn.classList.remove('hidden');
+                forwardBtn.classList.add('flex');
+            } else {
+                forwardBtn.classList.add('hidden');
+                forwardBtn.classList.remove('flex');
+            }
+        }
+
+        function handleBack() {
+            let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+            let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+            if (stack <= 0) return;
+            stack--; forward++;
+            sessionStorage.setItem('historyStack', stack.toString());
+            sessionStorage.setItem('forwardStack', forward.toString());
+            updateButtons();
+            history.back();
+        }
+
+        function handleForward() {
+            let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+            let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
+            if (forward <= 0) return;
+            stack++; forward--;
+            sessionStorage.setItem('historyStack', stack.toString());
+            sessionStorage.setItem('forwardStack', forward.toString());
+            updateButtons();
+            history.forward();
+        }
+
+        function registerNavigation() {
+            let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
+            stack++;
+            sessionStorage.setItem('historyStack', stack.toString());
+            sessionStorage.setItem('forwardStack', '0');
+            updateButtons();
+        }
+
         updateButtons();
-        history.back();
-    }
 
-    function handleForward() {
-        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
-        let forward = parseInt(sessionStorage.getItem('forwardStack') || '0');
-        if (forward <= 0) return;
-        stack++;
-        forward--;
-        sessionStorage.setItem('historyStack', stack.toString());
-        sessionStorage.setItem('forwardStack', forward.toString());
-        updateButtons();
-        history.forward();
-    }
+        function positionDropdown(dropdown, anchorBtn) {
+            const rect = anchorBtn.getBoundingClientRect();
+            const dropW = dropdown.offsetWidth;
+            let left = rect.right - dropW;
+            let top = rect.bottom + 8;
+            if (left < 8) left = 8;
+            dropdown.style.top = top + 'px';
+            dropdown.style.left = left + 'px';
+        }
 
-    function registerNavigation() {
-        let stack = parseInt(sessionStorage.getItem('historyStack') || '0');
-        stack++;
-        sessionStorage.setItem('historyStack', stack.toString());
-        sessionStorage.setItem('forwardStack', '0');
-        updateButtons();
-    }
+        const appsDropdown = document.getElementById('appsDropdown');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const appsBtn = document.getElementById('appsBtn');
+        const profileBtn = document.getElementById('profileBtn');
 
-    updateButtons();
+        appsBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            profileDropdown.style.display = 'none';
+            if (appsDropdown.style.display === 'none' || appsDropdown.style.display === '') {
+                appsDropdown.style.display = 'block';
+                positionDropdown(appsDropdown, appsBtn);
+            } else {
+                appsDropdown.style.display = 'none';
+            }
+        });
+
+        profileBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            appsDropdown.style.display = 'none';
+            if (profileDropdown.style.display === 'none' || profileDropdown.style.display === '') {
+                profileDropdown.style.display = 'block';
+                positionDropdown(profileDropdown, profileBtn);
+            } else {
+                profileDropdown.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function () {
+            appsDropdown.style.display = 'none';
+            profileDropdown.style.display = 'none';
+        });
+
+        window.addEventListener('resize', function () {
+            if (appsDropdown.style.display === 'block') positionDropdown(appsDropdown, appsBtn);
+            if (profileDropdown.style.display === 'block') positionDropdown(profileDropdown, profileBtn);
+        });
 </script>
