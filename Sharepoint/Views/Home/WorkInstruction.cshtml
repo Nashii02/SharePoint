@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Work Instructions";
+
     var categoryIcons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "Engineering & Technical Systems",  "fa-solid fa-gears" },
@@ -12,15 +13,32 @@
         { "Uncategorized",                    "fa-solid fa-folder" },
     };
 
-    var categoryAccents = new Dictionary<string, (string bg, string text, string border)>(StringComparer.OrdinalIgnoreCase)
+    // Gets color stored in DB for a category
+    string GetStoredColor(IList<WorkInstructionCard> cards)
+        => cards.FirstOrDefault()?.CategoryColor ?? "";
+
+    // Fallback: auto-assign consistent color from category name
+    string GetHashAccent(string category, string type)
     {
-        { "Engineering & Technical Systems",  ("bg-emerald-50", "text-emerald-700", "border-emerald-200") },
-        { "HR, Admin & Finance",              ("bg-blue-50",    "text-blue-700",    "border-blue-200")    },
-        { "IT & Support Systems",             ("bg-amber-50",   "text-amber-700",   "border-amber-200")   },
-        { "Operations & Logistics",           ("bg-violet-50",  "text-violet-700",  "border-violet-200")  },
-        { "Records, Documents & Compliance",  ("bg-rose-50",    "text-rose-700",    "border-rose-200")    },
-        { "Uncategorized",                    ("bg-gray-50",    "text-gray-600",    "border-gray-200")    },
-    };
+        int hash = 0;
+        foreach (char c in (category ?? "").ToLower())
+            hash = (hash * 31 + c) % 8;
+
+        var palettes = new[]
+        {
+            ("bg-emerald-50", "text-emerald-700", "border-emerald-200"),
+            ("bg-blue-50",    "text-blue-700",    "border-blue-200"),
+            ("bg-amber-50",   "text-amber-700",   "border-amber-200"),
+            ("bg-violet-50",  "text-violet-700",  "border-violet-200"),
+            ("bg-rose-50",    "text-rose-700",    "border-rose-200"),
+            ("bg-cyan-50",    "text-cyan-700",    "border-cyan-200"),
+            ("bg-orange-50",  "text-orange-700",  "border-orange-200"),
+            ("bg-pink-50",    "text-pink-700",    "border-pink-200"),
+        };
+
+        var (bg, text, border) = palettes[hash];
+        return type switch { "bg" => bg, "text" => text, "border" => border, _ => bg };
+    }
 }
 
 <!-- Dependencies -->
@@ -116,7 +134,7 @@
         }
 </style>
 
-<div class="min-h-screen flex flex-col bg-[#F6FFF6]">
+<div class="min-h-screen flex flex-col bg-[#FFFFFF]">
 
     <!-- HERO -->
     <section class="bg-[#1B2A6B] text-white relative overflow-hidden"
@@ -193,7 +211,7 @@
 
                 <!-- Stat pills (right-aligned, inside hero) -->
                 <div class="flex items-center gap-3 pb-1 flex-wrap">
-
+ 
                     <div class="stat-pill flex items-center gap-2.5 rounded-xl px-4 py-3">
                         <div class="w-8 h-8 rounded-lg flex items-center justify-center"
                              style="background: rgba(255,255,255,0.12);">
@@ -271,6 +289,8 @@
                             {
                                 "updated" => "bg-emerald-100 text-emerald-700",
                                 "review" => "bg-amber-100 text-amber-700",
+                                "pinned" => "bg-[#EEF2FF] text-[#1B2A6B]",
+                                "new" => "bg-purple-100 text-purple-700",
                                 _ => "bg-[#EEF2FF] text-[#1B2A6B]"
                             };
 
@@ -279,7 +299,7 @@
                             var extraStyl = isExtra ? "display:none;" : "";
 
                             <a href="@item.URL"
-                               class="featured-card bg-white rounded-xl p-4 flex flex-col @extraCls"
+                               class="featured-card bg-[#E2EBE2]/20 rounded-xl p-4 flex flex-col @extraCls"
                                data-title="@item.Title.ToLower()"
                                style="border: 1px solid #E8EAF0; border-left: 3px solid #1B2A6B; @extraStyl">
 
@@ -304,7 +324,7 @@
                                         <i class="fa-solid fa-clock text-[8px]"></i>
                                         @item.LastUpdated
                                     </span>
-                                    <i class="fa-solid fa-arrow-right text-[#1B2A6B]/30 text-xs"></i>
+                                    <i class="fa-solid fa-arrow-right text-[#1C3667]/70 text-xs"></i>
                                 </div>
 
                             </a>
@@ -318,15 +338,21 @@
             @foreach (var group in Model.GroupedSecondaryCards)
             {
                 var icon = categoryIcons.TryGetValue(group.Key, out var ic) ? ic : "fa-solid fa-folder";
-                var (accentBg, accentText, accentBorder) = categoryAccents.TryGetValue(group.Key, out var ac)
-                ? ac : ("bg-gray-50", "text-gray-600", "border-gray-200");
+                var storedColor = GetStoredColor(group.Value);
+                var hasColor = !string.IsNullOrEmpty(storedColor);
+                var accentBg = hasColor ? "" : GetHashAccent(group.Key, "bg");
+                var accentText = hasColor ? "" : GetHashAccent(group.Key, "text");
+                var accentBorder = hasColor ? "" : GetHashAccent(group.Key, "border");
+                var inlineStyle = hasColor ? $"background:{storedColor}22; border-color:{storedColor}55; color:{storedColor};" : "";
+                var iconInline = hasColor ? $"color:{storedColor};" : "";
 
                 <div class="category-group mb-8" data-category="@group.Key.ToLower()">
 
                     <!-- Category eyebrow -->
                     <div class="flex items-center gap-2.5 mb-3">
-                        <div class="w-6 h-6 rounded-md @accentBg @accentBorder border flex items-center justify-center flex-shrink-0">
-                            <i class="@icon @accentText text-[11px]"></i>
+                        <div class="w-6 h-6 rounded-md @accentBg @accentBorder border flex items-center justify-center flex-shrink-0"
+                             style="@inlineStyle">
+                            <i class="@icon @accentText text-[11px]" style="@iconInline"></i>
                         </div>
                         <span class="text-[11px] font-bold text-[#1B2A6B] uppercase tracking-widest">@group.Key</span>
                         <span class="text-[10px] text-gray-400 font-medium">@group.Value.Count module(s)</span>
@@ -337,19 +363,20 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         @foreach (var item in group.Value)
                         {
-                            var (mBg, mText, mBorder) = categoryAccents.TryGetValue(item.Category ?? group.Key, out var ma)
-                            ? ma : ("bg-gray-50", "text-gray-500", "border-gray-200");
+                            var mBg = hasColor ? "" : GetHashAccent(item.Category ?? group.Key, "bg");
+                            var mText = hasColor ? "" : GetHashAccent(item.Category ?? group.Key, "text");
+                            var mBorder = hasColor ? "" : GetHashAccent(item.Category ?? group.Key, "border");
 
-                            <div class="module-card bg-white rounded-xl p-3 relative"
+                            <div class="module-card bg-[#E2EBE2]/20 rounded-xl p-3 relative"
                                  data-title="@item.Title.ToLower()"
                                  style="border: 1px solid #E8EAF0; border-left: 3px solid transparent;">
 
                                 <!-- Hover actions -->
                                 <div class="card-actions absolute top-2 right-2 z-10 flex gap-1">
                                     <button type="button"
-                                            onclick="openEditModal('@item.URL.Split('=').Last()', '@item.Title', '@item.Subtitle', '@item.IconClass', '@item.Category')"
+                                            onclick="openEditModal('@item.URL.Split('=').Last()', '@item.Title', '@item.Subtitle', '@item.IconClass', '@item.Category', '@item.CategoryColor', @item.IsFeatured.ToString().ToLower())"
                                             class="w-6 h-6 rounded-md bg-[#EEF2FF] hover:bg-[#E0E6FF] flex items-center justify-center transition">
-                                        <i class="fa-solid fa-pen text-[#1B2A6B] text-[9px]"></i>
+                                        <i class="fa-solid fa-pen text-[#1C3667] text-[9px]"></i>
                                     </button>
                                     <form method="post" action="/Home/DeleteModule" style="display:contents;">
                                         <input type="hidden" name="slug" value="@item.URL.Split('=').Last()" />
@@ -362,9 +389,11 @@
                                 </div>
 
                                 <a href="@item.URL" class="flex items-center gap-2.5">
-                                    <div class="w-9 h-9 rounded-lg @mBg @mBorder border flex items-center justify-center flex-shrink-0">
-                                        <i class="@item.IconClass @mText text-base"></i>
+                                    <div class="w-9 h-9 rounded-lg @mBg @mBorder border flex items-center justify-center flex-shrink-0"
+                                         style="@inlineStyle">
+                                        <i class="@item.IconClass @mText text-base" style="@iconInline"></i>
                                     </div>
+
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm font-semibold text-[#1B2A6B] leading-snug truncate pr-10">@item.Title</p>
                                         <p class="text-[10px] text-gray-400 mt-0.5 leading-snug truncate">@item.Subtitle</p>
@@ -431,19 +460,19 @@
 
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Title</label>
-                <input type="text" name="title" required placeholder="e.g. Fleet Management"
+                <input type="text" name="title" required placeholder="e.g. Budget"
                        class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
             </div>
 
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Description</label>
-                <input type="text" name="subtitle" placeholder="e.g. Manage company vehicles"
+                <input type="text" name="subtitle" placeholder="e.g. Finance Procedure"
                        class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
             </div>
 
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Category</label>
-                <input type="text" name="category" placeholder="e.g. HR & Finance"
+                <input type="text" name="category" placeholder="e.g. HR, Admin & Finance"
                        list="category-suggestions"
                        class="modal-input w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition" />
                 <datalist id="category-suggestions">
@@ -453,6 +482,70 @@
                     }
                 </datalist>
                 <p class="text-[10px] text-gray-400 mt-1">Type a new category or pick an existing one</p>
+            </div>
+
+            <!-- Category Color -->
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
+                    Category Color <span class="text-gray-300 font-normal">(optional)</span>
+                </label>
+
+                <!-- Preset swatches -->
+                <div class="flex flex-wrap gap-2 mb-2">
+                    @foreach (var color in new[] {
+                                        "#1B2A6B", "#0ea5e9", "#10b981", "#f59e0b",
+                                        "#ef4444", "#8b5cf6", "#ec4899", "#f97316",
+                                        "#14b8a6", "#6366f1", "#84cc16", "#64748b"
+                                        })
+                    {
+                        <button type="button"
+                                onclick="pickColor('@color', 'add')"
+                                class="w-7 h-7 rounded-lg border-2 border-transparent hover:border-gray-400 transition flex-shrink-0"
+                                style="background: @color;"
+                                title="@color">
+                        </button>
+                    }
+                </div>
+
+                <!-- Custom color input -->
+                <div class="flex items-center gap-2">
+                    <input type="color"
+                           id="add-color-picker"
+                           onchange="pickColor(this.value, 'add')"
+                           class="w-8 h-8 rounded cursor-pointer border border-gray-200"
+                           value="#1B2A6B" />
+                    <input type="text"
+                           name="categoryColor"
+                           id="add-color-input"
+                           placeholder="e.g. #1B2A6B or leave empty"
+                           class="modal-input flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 transition" />
+                    <button type="button"
+                            onclick="clearColor('add')"
+                            class="text-[10px] text-gray-400 hover:text-gray-600 underline flex-shrink-0">
+                        Clear
+                    </button>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-1">Applies to all modules in this category</p>
+            </div>
+
+            <!-- Featured toggle -->
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
+                    Pin to Featured
+                </label>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                            id="add-featured-btn"
+                            onclick="toggleFeaturedSwitch('add')"
+                            class="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0"
+                            style="background: #E5E7EB;">
+                        <span id="add-featured-thumb"
+                              class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200">
+                        </span>
+                    </button>
+                    <input type="hidden" name="isFeatured" id="add-featured-value" value="false" />
+                    <span id="add-featured-label" class="text-[11px] text-gray-400">Off — will appear in secondary cards</span>
+                </div>
             </div>
 
             <div class="mb-4">
@@ -564,6 +657,65 @@
                 </datalist>
             </div>
 
+            <!-- Category Color (Edit modal) -->
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
+                    Category Color <span class="text-gray-300 font-normal">(optional)</span>
+                </label>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    @foreach (var color in new[] {
+                                        "#1B2A6B", "#0ea5e9", "#10b981", "#f59e0b",
+                                        "#ef4444", "#8b5cf6", "#ec4899", "#f97316",
+                                        "#14b8a6", "#6366f1", "#84cc16", "#64748b"
+                                        })
+                    {
+                        <button type="button"
+                                onclick="pickColor('@color', 'edit')"
+                                class="w-7 h-7 rounded-lg border-2 border-transparent hover:border-gray-400 transition flex-shrink-0"
+                                style="background: @color;"
+                                title="@color">
+                        </button>
+                    }
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="color"
+                           id="edit-color-picker"
+                           onchange="pickColor(this.value, 'edit')"
+                           class="w-8 h-8 rounded cursor-pointer border border-gray-200"
+                           value="#1B2A6B" />
+                    <input type="text"
+                           name="categoryColor"
+                           id="edit-color-input"
+                           placeholder="e.g. #1B2A6B or leave empty"
+                           class="modal-input flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 transition" />
+                    <button type="button"
+                            onclick="clearColor('edit')"
+                            class="text-[10px] text-gray-400 hover:text-gray-600 underline flex-shrink-0">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Featured toggle -->
+            <div class="mb-4">
+                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
+                    Pin to Featured
+                </label>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                            id="edit-featured-btn"
+                            onclick="toggleFeaturedSwitch('edit')"
+                            class="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0"
+                            style="background: #E5E7EB;">
+                        <span id="edit-featured-thumb"
+                              class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200">
+                        </span>
+                    </button>
+                    <input type="hidden" name="isFeatured" id="edit-featured-value" value="false" />
+                    <span id="edit-featured-label" class="text-[11px] text-gray-400">Off — will appear in secondary cards</span>
+                </div>
+            </div>
+
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Icon</label>
                 <div class="flex gap-2">
@@ -611,7 +763,8 @@
                 </button>
                 <button type="submit"
                         class="flex-1 bg-[#1B2A6B] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#152255] transition">
-                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save Changes
+                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> 
+                    Save Changes
                 </button>
             </div>
 
@@ -625,53 +778,71 @@
         document.getElementById('add-modal').style.cssText = 'display:flex !important;';
         document.body.style.overflow = 'hidden';
     }
+
     function closeAddModal() {
         document.getElementById('add-modal').style.cssText = 'display:none !important;';
         document.body.style.overflow = '';
     }
+
     document.getElementById('add-modal').addEventListener('click', function(e) {
         if (e.target === this) closeAddModal();
     });
 
+
+
     /* ─── EDIT MODAL ─── */
-    function openEditModal(slug, title, subtitle, iconClass, category) {
-        document.getElementById('edit-slug').value      = slug;
-        document.getElementById('edit-title').value     = title;
-        document.getElementById('edit-subtitle').value  = subtitle;
-        document.getElementById('edit-category').value  = category;
-        document.getElementById('edit-icon-input').value = iconClass;
+        function openEditModal(slug, title, subtitle, iconClass, category, categoryColor, isFeatured) {
+        document.getElementById('edit-slug').value         = slug;
+        document.getElementById('edit-title').value        = title;
+        document.getElementById('edit-subtitle').value     = subtitle;
+        document.getElementById('edit-category').value     = category;
+        document.getElementById('edit-icon-input').value   = iconClass;
+        document.getElementById('edit-color-input').value  = categoryColor || '';
+        document.getElementById('edit-color-picker').value = categoryColor || '#1B2A6B';
         updateEditIconPreview(iconClass);
+        setFeaturedState('edit', isFeatured === true || isFeatured === 'true');
         document.getElementById('edit-modal').style.cssText = 'display:flex !important;';
         document.body.style.overflow = 'hidden';
     }
+
     function closeEditModal() {
         document.getElementById('edit-modal').style.cssText = 'display:none !important;';
         document.body.style.overflow = '';
     }
+
     document.getElementById('edit-modal').addEventListener('click', function(e) {
         if (e.target === this) closeEditModal();
     });
+
+
 
     /* ─── ICON PICKERS ─── */
     function updateIconPreview(value) {
         document.getElementById('icon-preview').className = value + ' text-[#1B2A6B] text-base';
     }
+
     function pickIcon(iconClass) {
         document.getElementById('icon-input').value = iconClass;
         updateIconPreview(iconClass);
     }
+
     function updateEditIconPreview(value) {
         document.getElementById('edit-icon-preview').className = value + ' text-[#1B2A6B] text-base';
     }
+
     function pickEditIcon(iconClass) {
         document.getElementById('edit-icon-input').value = iconClass;
         updateEditIconPreview(iconClass);
     }
 
+
+
     /* ─── ESC TO CLOSE ─── */
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') { closeAddModal(); closeEditModal(); }
     });
+
+
 
     /* ─── SEARCH ─── */
     function searchModules(query) {
@@ -703,6 +874,8 @@
         if (noResults) noResults.style.display = allHidden && q !== '' ? 'block' : 'none';
     }
 
+
+
     /* ─── TOGGLE FEATURED ─── */
     let featuredExpanded = false;
     function toggleFeatured() {
@@ -716,5 +889,66 @@
             featuredExpanded
                 ? 'fa-solid fa-chevron-up text-[8px]'
                 : 'fa-solid fa-chevron-down text-[8px]';
+    }
+
+
+
+    /* -- Category Color -- */
+        function pickColor(hex, mode) {
+        document.getElementById(mode + '-color-input').value  = hex;
+        document.getElementById(mode + '-color-picker').value = hex;
+    }
+
+    function clearColor(mode) {
+        document.getElementById(mode + '-color-input').value  = '';
+        document.getElementById(mode + '-color-picker').value = '#1B2A6B';
+    }
+
+           // Rename the modal toggle from toggleFeatured to toggleFeaturedSwitch
+    function toggleFeaturedSwitch(mode) {
+        const btn   = document.getElementById(mode + '-featured-btn');
+        const thumb = document.getElementById(mode + '-featured-thumb');
+        const input = document.getElementById(mode + '-featured-value');
+        const label = document.getElementById(mode + '-featured-label');
+
+        const isOn = input.value === 'true';
+
+        if (isOn) {
+            input.value           = 'false';
+            btn.style.background  = '#E5E7EB';
+            thumb.style.transform = 'translateX(0)';
+            label.textContent     = 'Off — will appear in secondary cards';
+            label.className       = 'text-[11px] text-gray-400';
+        } else {
+            input.value           = 'true';
+            btn.style.background  = '#1B2A6B';
+            thumb.style.transform = 'translateX(20px)';
+            label.textContent     = 'On — will be pinned to featured section';
+            label.className       = 'text-[11px] text-[#1B2A6B] font-semibold';
+        }
+    }
+
+
+
+    // Helper to set featured state programmatically (used when opening edit modal)
+    function setFeaturedState(mode, value) {
+        const btn   = document.getElementById(mode + '-featured-btn');
+        const thumb = document.getElementById(mode + '-featured-thumb');
+        const input = document.getElementById(mode + '-featured-value');
+        const label = document.getElementById(mode + '-featured-label');
+
+        if (value) {
+            input.value          = 'true';
+            btn.style.background = '#1B2A6B';
+            thumb.style.transform = 'translateX(20px)';
+            label.textContent    = 'On — will be pinned to featured section';
+            label.className      = 'text-[11px] text-[#1B2A6B] font-semibold';
+        } else {
+            input.value          = 'false';
+            btn.style.background = '#E5E7EB';
+            thumb.style.transform = 'translateX(0)';
+            label.textContent    = 'Off — will appear in secondary cards';
+            label.className      = 'text-[11px] text-gray-400';
+        }
     }
 </script>

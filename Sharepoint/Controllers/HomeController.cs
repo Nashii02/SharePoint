@@ -31,38 +31,69 @@ namespace Sharepoint.Controllers
         {
             var allModules = _context.Modules.ToList();
 
-            // Get the 4 most recently updated modules, latest first (left to right)
+            var recentCutoff = DateTime.Now.AddDays(-7);  // new modules show for 7 days
+
+            // Pinned modules (IsFeatured = true)
+            var pinnedModules = allModules
+                .Where(m => m.IsFeatured)
+                .ToList();
+
+            // New modules added within last 7 days (not pinned)
+            var newModules = allModules
+                .Where(m => !m.IsFeatured && m.CreatedAt.HasValue && m.CreatedAt >= recentCutoff)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToList();
+
+            // Recently updated modules (not pinned, not new)
             var recentlyUpdated = allModules
-                .Where(m => m.LastFileUpload.HasValue)
+                .Where(m => !m.IsFeatured
+                         && m.LastFileUpload.HasValue
+                         && !(m.CreatedAt.HasValue && m.CreatedAt >= recentCutoff))
                 .OrderByDescending(m => m.LastFileUpload)
                 .Take(9)
                 .ToList();
 
+            // Combine all featured: pinned + new + recently updated
+            var featuredModules = pinnedModules
+                .Concat(newModules)
+                .Concat(recentlyUpdated)
+                .DistinctBy(m => m.Slug)
+                .ToList();
+
             var model = new WorkInstructionViewModel
             {
-                TotalModules = allModules.Count(m => !m.IsFeatured),
+                TotalModules = allModules.Count,
                 TotalCategories = allModules
                     .Where(m => !m.IsFeatured)
                     .GroupBy(m => m.Category ?? "Uncategorized")
                     .Count(),
                 RecentlyUpdatedCount = recentlyUpdated.Count,
 
-                // Featured = only the 4 most recently updated, latest on the left
-                FeaturedCards = recentlyUpdated
+                FeaturedCards = featuredModules
                     .Select(m => new WorkInstructionCard
                     {
                         Title = m.Title,
                         Subtitle = m.Subtitle ?? "",
                         IconClass = m.IconClass ?? "",
-                        Status = "Recently Updated",
-                        StatusColor = "updated",
-                        LastUpdated = m.LastFileUpload?.ToString("MMM dd, yyyy") ?? "",
+
+                        // Badge depends on why it's featured
+                        Status = m.IsFeatured ? "Pinned"
+                               : (m.CreatedAt.HasValue && m.CreatedAt >= recentCutoff) ? "New Module"
+                               : "Recently Updated",
+
+                        StatusColor = m.IsFeatured ? "pinned"
+                                    : (m.CreatedAt.HasValue && m.CreatedAt >= recentCutoff) ? "new"
+                                    : "updated",
+
+                        LastUpdated = m.CreatedAt.HasValue && m.CreatedAt >= recentCutoff
+                                    ? m.CreatedAt?.ToString("MMM dd, yyyy") ?? ""
+                                    : m.LastFileUpload?.ToString("MMM dd, yyyy") ?? "",
+
                         URL = $"/Home/Module?id={m.Slug}"
                     }).ToList(),
 
-                // Secondary = ALL non-featured modules, always stays regardless of updates
+                // Secondary = ALL modules regardless of pin (shows everything)
                 GroupedSecondaryCards = allModules
-                    .Where(m => !m.IsFeatured)
                     .GroupBy(m => m.Category ?? "Uncategorized")
                     .OrderBy(g => g.Key == "Uncategorized" ? "zzz" : g.Key)
                     .ToDictionary(
@@ -73,6 +104,8 @@ namespace Sharepoint.Controllers
                             Subtitle = m.Subtitle ?? "",
                             IconClass = m.IconClass ?? "",
                             Category = m.Category ?? "Uncategorized",
+                            CategoryColor = m.CategoryColor,
+                            IsFeatured = m.IsFeatured,
                             URL = $"/Home/Module?id={m.Slug}"
                         }).ToList()
                     )
@@ -233,28 +266,13 @@ namespace Sharepoint.Controllers
 
 
 
-        [HttpPost]
-        public IActionResult DeleteFile(int fileId, string moduleId)
-        {
-            if (string.IsNullOrEmpty(moduleId))
-                return BadRequest("Module ID is missing.");
-
-            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
-            if (file != null)
-            {
-                file.IsDeleted = true;
-                file.DeletedAt = DateTime.Now;
-                file.DeletedBy = "Current User";
-                _context.SaveChanges();
-            }
-            return RedirectToAction("Module", new { id = moduleId });
-        }
+       
 
 
 
 
         [HttpPost]
-        public IActionResult AddModule(string title, string subtitle, string iconClass, string category)
+        public IActionResult AddModule(string title, string subtitle, string iconClass, string category, string categoryColor, string isFeatured)
         {
             if (string.IsNullOrEmpty(title))
                 return RedirectToAction("WorkInstruction");
@@ -274,11 +292,34 @@ namespace Sharepoint.Controllers
                 Subtitle = subtitle,
                 IconClass = iconClass,
                 Category = string.IsNullOrEmpty(category) ? "Uncategorized" : category,
-                IsFeatured = false
+                CategoryColor = string.IsNullOrEmpty(categoryColor) ? null : categoryColor,
+                IsFeatured = isFeatured == "true",
+                CreatedAt = DateTime.Now
             });
-
+            
             _context.SaveChanges();
+            return RedirectToAction("WorkInstruction");
+        }
 
+
+
+
+
+
+        [HttpPost]
+        public IActionResult EditModule(string slug, string title, string subtitle, string category, string iconClass, string categoryColor, string isFeatured)
+        {
+            var module = _context.Modules.FirstOrDefault(m => m.Slug == slug);
+            if (module != null)
+            {
+                module.Title = title;
+                module.Subtitle = subtitle;
+                module.Category = category;
+                module.IconClass = iconClass;
+                module.CategoryColor = string.IsNullOrEmpty(categoryColor) ? null : categoryColor;
+                module.IsFeatured = isFeatured == "true";
+                _context.SaveChanges();
+            }
             return RedirectToAction("WorkInstruction");
         }
 
@@ -313,36 +354,26 @@ namespace Sharepoint.Controllers
 
 
 
-        [HttpPost]
-        public IActionResult EditModule(string slug, string title, string subtitle, string category, string iconClass)
-        {
-            var module = _context.Modules.FirstOrDefault(m => m.Slug == slug);
-            if (module != null)
-            {
-                module.Title = title;
-                module.Subtitle = subtitle;
-                module.Category = category;
-                module.IconClass = iconClass;
-                _context.SaveChanges();
-            }
-            return RedirectToAction("WorkInstruction");
-        }
 
         [HttpPost]
-        public IActionResult RestoreFile(int fileId, string moduleId)
+        public IActionResult DeleteFile(int fileId, string moduleId)
         {
+            if (string.IsNullOrEmpty(moduleId))
+                return BadRequest("Module ID is missing.");
+
             var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
-
             if (file != null)
             {
-                file.IsDeleted = false;
-                file.DeletedAt = null;
-                file.DeletedBy = null;
+                file.IsDeleted = true;
+                file.DeletedAt = DateTime.Now;
+                file.DeletedBy = "Current User";
                 _context.SaveChanges();
             }
-
             return RedirectToAction("Module", new { id = moduleId });
         }
+
+
+
 
         [HttpPost]
         public IActionResult PermanentDeleteFile(int fileId, string moduleId)
@@ -361,6 +392,30 @@ namespace Sharepoint.Controllers
 
             return RedirectToAction("Module", new { id = moduleId });
         }
+
+
+
+
+        [HttpPost]
+        public IActionResult RestoreFile(int fileId, string moduleId)
+        {
+            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
+
+            if (file != null)
+            {
+                file.IsDeleted = false;
+                file.DeletedAt = null;
+                file.DeletedBy = null;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Module", new { id = moduleId });
+        }
+
+
+
+
+        
 
 
 

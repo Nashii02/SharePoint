@@ -13,6 +13,8 @@
         public string? LastUpdated { get; set; }
         public DateTime? LastFileUpload { get; set; }
         public string? Category { get; set; }
+        public string? CategoryColor { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 
     public class ModuleFile
