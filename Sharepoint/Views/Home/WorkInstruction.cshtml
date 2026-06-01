@@ -76,15 +76,6 @@
             border-left-color: #1B2A6B !important;
         }
 
-            .module-card:hover .card-actions {
-                opacity: 1;
-            }
-
-    .card-actions {
-        opacity: 0;
-        transition: opacity 0.15s;
-    }
-
     /* Featured card */
     .featured-card {
         transition: box-shadow 0.18s, transform 0.18s;
@@ -183,12 +174,21 @@
                                style="outline:none;" />
                     </div>
 
-                    <!-- Add module shortcut -->
+                    <!-- Add Module -->
                     <button type="button" onclick="openAddModal()"
                             class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
                             style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
                         <i class="fa-solid fa-plus text-[10px]"></i>
                         Add Module
+                    </button>
+
+                    <!-- Edit Module -->
+                    <button type="button" onclick="toggleEditMode()"
+                            id="edit-mode-btn"
+                            class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                            style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                        Edit Module
                     </button>
                 </div>
             </div>
@@ -369,56 +369,35 @@
 
                             <div class="module-card bg-[#E2EBE2]/20 rounded-xl p-3 relative"
                                  data-title="@item.Title.ToLower()"
-                                 style="border: 1px solid #E8EAF0; border-left: 3px solid transparent;">
+                                 data-slug="@item.URL.Split('=').Last()"
+                                 data-subtitle="@item.Subtitle"
+                                 data-icon="@item.IconClass"
+                                 data-category="@item.Category"
+                                 data-color="@item.CategoryColor"
+                                 onclick="handleCardClick(this)"
+                                 style="border: 1px solid #E8EAF0; border-left: 3px solid transparent; cursor: pointer;">
 
-                                <!-- Hover actions -->
-                                <div class="card-actions absolute top-2 right-2 z-10 flex gap-1">
-                                    <button type="button"
-                                            onclick="openEditModal('@item.URL.Split('=').Last()', '@item.Title', '@item.Subtitle', '@item.IconClass', '@item.Category', '@item.CategoryColor', @item.IsFeatured.ToString().ToLower())"
-                                            class="w-6 h-6 rounded-md bg-[#EEF2FF] hover:bg-[#E0E6FF] flex items-center justify-center transition">
-                                        <i class="fa-solid fa-pen text-[#1C3667] text-[9px]"></i>
-                                    </button>
-                                    <form method="post" action="/Home/DeleteModule" style="display:contents;">
-                                        <input type="hidden" name="slug" value="@item.URL.Split('=').Last()" />
-                                        <button type="submit"
-                                                onclick="return confirm('Delete @item.Title? This will also delete all its files.')"
-                                                class="w-6 h-6 rounded-md bg-red-50 hover:bg-red-100 flex items-center justify-center transition">
-                                            <i class="fa-solid fa-trash text-red-400 text-[9px]"></i>
-                                        </button>
-                                    </form>
+                                <!-- Edit mode indicator (hidden by default) -->
+                                <div class="edit-indicator absolute top-2 right-2 w-5 h-5 rounded-full bg-amber-400 items-center justify-center hidden">
+                                    <i class="fa-solid fa-pen text-white text-[8px]"></i>
                                 </div>
 
-                                <a href="@item.URL" class="flex items-center gap-2.5">
+                                <div class="flex items-center gap-2.5">
                                     <div class="w-9 h-9 rounded-lg @mBg @mBorder border flex items-center justify-center flex-shrink-0"
                                          style="@inlineStyle">
                                         <i class="@item.IconClass @mText text-base" style="@iconInline"></i>
                                     </div>
-
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold text-[#1B2A6B] leading-snug truncate pr-10">@item.Title</p>
+                                        <p class="text-sm font-semibold text-[#1B2A6B] leading-snug truncate">@item.Title</p>
                                         <p class="text-[10px] text-gray-400 mt-0.5 leading-snug truncate">@item.Subtitle</p>
                                     </div>
-                                </a>
-
+                                </div>
                             </div>
                         }
                     </div>
                 </div>
             }
 
-            <!-- ADD MODULE CARD -->
-            <div class="mt-2 mb-4">
-                <button type="button" onclick="openAddModal()"
-                        class="add-card w-full bg-white rounded-xl p-4 flex items-center gap-3 transition">
-                    <div class="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-plus text-[#1B2A6B] text-lg"></i>
-                    </div>
-                    <div class="text-left">
-                        <p class="text-sm font-semibold text-[#1B2A6B]">Add New Module</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Click to create a new work instruction module</p>
-                    </div>
-                </button>
-            </div>
 
             <!-- No results -->
             <div id="no-results" style="display:none;"
@@ -528,25 +507,6 @@
                 <p class="text-[10px] text-gray-400 mt-1">Applies to all modules in this category</p>
             </div>
 
-            <!-- Featured toggle -->
-            <div class="mb-4">
-                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
-                    Pin to Featured
-                </label>
-                <div class="flex items-center gap-3">
-                    <button type="button"
-                            id="add-featured-btn"
-                            onclick="toggleFeaturedSwitch('add')"
-                            class="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0"
-                            style="background: #E5E7EB;">
-                        <span id="add-featured-thumb"
-                              class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200">
-                        </span>
-                    </button>
-                    <input type="hidden" name="isFeatured" id="add-featured-value" value="false" />
-                    <span id="add-featured-label" class="text-[11px] text-gray-400">Off — will appear in secondary cards</span>
-                </div>
-            </div>
 
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Icon</label>
@@ -696,25 +656,6 @@
                 </div>
             </div>
 
-            <!-- Featured toggle -->
-            <div class="mb-4">
-                <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">
-                    Pin to Featured
-                </label>
-                <div class="flex items-center gap-3">
-                    <button type="button"
-                            id="edit-featured-btn"
-                            onclick="toggleFeaturedSwitch('edit')"
-                            class="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0"
-                            style="background: #E5E7EB;">
-                        <span id="edit-featured-thumb"
-                              class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200">
-                        </span>
-                    </button>
-                    <input type="hidden" name="isFeatured" id="edit-featured-value" value="false" />
-                    <span id="edit-featured-label" class="text-[11px] text-gray-400">Off — will appear in secondary cards</span>
-                </div>
-            </div>
 
             <div class="mb-4">
                 <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Icon</label>
@@ -756,21 +697,35 @@
                 </div>
             </div>
 
-            <div class="flex gap-2">
+            <div class="flex gap-2 mt-1">
                 <button type="button" onclick="closeEditModal()"
                         class="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition">
                     Cancel
                 </button>
                 <button type="submit"
                         class="flex-1 bg-[#1B2A6B] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#152255] transition">
-                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> 
+                    <i class="fa-solid fa-floppy-disk mr-1.5"></i>
                     Save Changes
+                </button>
+            </div>
+
+            <!-- Delete — full width, separated -->
+            <div class="mt-2">
+                <button type="button"
+                        onclick="confirmDeleteModule()"
+                        class="w-full border border-red-200 text-red-400 text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-red-50 transition">
+                    <i class="fa-solid fa-trash mr-1.5"></i>
+                    Delete Module
                 </button>
             </div>
 
         </form>
     </div>
 </div>
+<!-- Standalone delete form — outside modals -->
+<form id="delete-module-form" method="post" action="/Home/DeleteModule" style="display:none;">
+    <input type="hidden" name="slug" id="delete-slug" />
+</form>
 
 <script>
     /* ─── ADD MODAL ─── */
@@ -790,29 +745,9 @@
 
 
 
-    /* ─── EDIT MODAL ─── */
-        function openEditModal(slug, title, subtitle, iconClass, category, categoryColor, isFeatured) {
-        document.getElementById('edit-slug').value         = slug;
-        document.getElementById('edit-title').value        = title;
-        document.getElementById('edit-subtitle').value     = subtitle;
-        document.getElementById('edit-category').value     = category;
-        document.getElementById('edit-icon-input').value   = iconClass;
-        document.getElementById('edit-color-input').value  = categoryColor || '';
-        document.getElementById('edit-color-picker').value = categoryColor || '#1B2A6B';
-        updateEditIconPreview(iconClass);
-        setFeaturedState('edit', isFeatured === true || isFeatured === 'true');
-        document.getElementById('edit-modal').style.cssText = 'display:flex !important;';
-        document.body.style.overflow = 'hidden';
-    }
+    
 
-    function closeEditModal() {
-        document.getElementById('edit-modal').style.cssText = 'display:none !important;';
-        document.body.style.overflow = '';
-    }
-
-    document.getElementById('edit-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeEditModal();
-    });
+   
 
 
 
@@ -949,6 +884,86 @@
             thumb.style.transform = 'translateX(0)';
             label.textContent    = 'Off — will appear in secondary cards';
             label.className      = 'text-[11px] text-gray-400';
+        }
+    }
+
+        /* ─── EDIT MODE ─── */
+    let editModeActive = false;
+
+    function toggleEditMode() {
+        editModeActive = !editModeActive;
+        const btn = document.getElementById('edit-mode-btn');
+
+        if (editModeActive) {
+            btn.style.background = 'rgba(251,191,36,0.25)';
+            btn.style.border     = '1px solid rgba(251,191,36,0.5)';
+            btn.style.color      = '#fbbf24';
+            btn.innerHTML        = '<i class="fa-solid fa-pen text-[10px]"></i> Edit Mode <span class="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse"></span>';
+
+            document.querySelectorAll('.module-card').forEach(card => {
+                card.style.borderLeftColor = '#f59e0b';
+                card.querySelectorAll('.edit-indicator').forEach(el => el.classList.replace('hidden', 'flex'));
+            });
+        } else {
+            btn.style.background = 'rgba(255,255,255,0.12)';
+            btn.style.border     = '1px solid rgba(255,255,255,0.15)';
+            btn.style.color      = '';
+            btn.innerHTML        = '<i class="fa-solid fa-pen text-[10px]"></i> Edit Mode';
+
+            document.querySelectorAll('.module-card').forEach(card => {
+                card.style.borderLeftColor = 'transparent';
+                card.querySelectorAll('.edit-indicator').forEach(el => el.classList.replace('flex', 'hidden'));
+            });
+        }
+    }
+
+    function handleCardClick(card) {
+        if (!editModeActive) {
+            // Normal navigation
+            const slug = card.getAttribute('data-slug');
+            window.location.href = `/Home/Module?id=${slug}`;
+            return;
+        }
+        // Edit mode — open modal
+        openEditModal(
+            card.getAttribute('data-slug'),
+            card.getAttribute('data-title'),
+            card.getAttribute('data-subtitle'),
+            card.getAttribute('data-icon'),
+            card.getAttribute('data-category'),
+            card.getAttribute('data-color')
+        );
+    }
+
+    /* ─── EDIT MODAL ─── */
+    function openEditModal(slug, title, subtitle, iconClass, category, categoryColor) {
+        document.getElementById('edit-slug').value         = slug;
+        document.getElementById('delete-slug').value       = slug;
+        document.getElementById('edit-title').value        = title;
+        document.getElementById('edit-subtitle').value     = subtitle;
+        document.getElementById('edit-category').value     = category;
+        document.getElementById('edit-icon-input').value   = iconClass;
+        document.getElementById('edit-color-input').value  = categoryColor || '';
+        document.getElementById('edit-color-picker').value = categoryColor || '#1B2A6B';
+        updateEditIconPreview(iconClass);
+        document.getElementById('edit-modal').style.cssText = 'display:flex !important;';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').style.cssText = 'display:none !important;';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('edit-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    function confirmDeleteModule() {
+        const slug = document.getElementById('delete-slug').value;
+        if (!slug) return;
+        if (confirm('Delete this module? This will also delete all its files.')) {
+            document.getElementById('delete-module-form').submit();
         }
     }
 </script>

@@ -25,7 +25,6 @@
         public string FileType { get; set; } = "";
         public string FilePath { get; set; } = "";
         public string FileUrl { get; set; } = "";
-        public string UploadedBy { get; set; } = "";
         public DateTime UploadedDate { get; set; }
         public string? Description { get; set; } = "";
         public string? FileSize { get; set; } = "";

@@ -149,15 +149,6 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 bg-white/10 backdrop-blur rounded-lg px-3 py-2 border border-white/10">
-                        <div class="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center">
-                            <i class="fa-solid fa-trash text-white text-xs"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-blue-200/70 leading-none">In Trash</p>
-                            <p class="text-sm font-bold text-white leading-tight mt-0.5">@Model.DeletedFiles.Count</p>
-                        </div>
-                    </div>
 
                     @if (Model.Files.Any())
                     {
@@ -291,9 +282,7 @@
                                             }
 
                                             <div class="flex items-center gap-3 mt-1 flex-wrap">
-                                                <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                                                    <i class="fa-solid fa-user text-[8px]"></i>@file.UploadedBy
-                                                </span>
+                                                
                                                 <span class="text-[10px] text-gray-400 flex items-center gap-1">
                                                     <i class="fa-solid fa-calendar text-[8px]"></i>@file.UploadedDateFormatted
                                                 </span>
@@ -358,7 +347,7 @@
                                                             </span>
                                                         </div>
                                                         <p class="text-[10px] text-gray-400 mt-0.5">
-                                                            @old.UploadedBy · @old.UploadedDateFormatted · @old.FileSize
+                                                            @old.UploadedDateFormatted · @old.FileSize
                                                         </p>
                                                     </div>
                                                     <a href="@old.FileUrl" download
@@ -490,61 +479,7 @@
                         </div>
                     </form>
 
-                    <!-- Trash bin -->
-                    @if (Model.DeletedFiles.Any())
-                    {
-                        <div class="bg-white rounded-xl card shadow-sm overflow-hidden">
-
-                            <div class="px-4 py-3 flex items-center justify-between"
-                                 style="border-bottom: 1px solid #F5F6FA;">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-trash text-red-400 text-xs"></i>
-                                    <p class="text-xs font-semibold text-gray-500">Trash</p>
-                                </div>
-                                <span class="text-[10px] font-semibold bg-red-50 text-red-400 px-2 py-0.5 rounded-full">
-                                    @Model.DeletedFiles.Count
-                                </span>
-                            </div>
-
-                            <ul class="divide-y divide-gray-50 overflow-y-auto" style="max-height: 260px;">
-                                @foreach (var file in Model.DeletedFiles)
-                                {
-                                    <li class="px-4 py-3">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <p class="text-[11px] font-semibold text-gray-400 truncate flex-1">
-                                                @file.FileName
-                                            </p>
-                                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-mono">
-                                                @file.FileType
-                                            </span>
-                                        </div>
-                                        <p class="text-[10px] text-gray-300 mb-2">
-                                            Deleted @file.DeletedAt?.ToString("MMM dd, yyyy")
-                                        </p>
-                                        <div class="flex gap-2">
-                                            <form method="post" action="/Home/RestoreFile" class="flex-1">
-                                                <input type="hidden" name="fileId" value="@file.Id" />
-                                                <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
-                                                <button type="submit"
-                                                        class="w-full text-[10px] font-semibold px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition">
-                                                    <i class="fa-solid fa-rotate-left mr-1"></i> Restore
-                                                </button>
-                                            </form>
-                                            <form method="post" action="/Home/PermanentDeleteFile" class="flex-1">
-                                                <input type="hidden" name="fileId" value="@file.Id" />
-                                                <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
-                                                <button type="submit"
-                                                        onclick="return confirm('Permanently delete @file.FileName? This cannot be undone.')"
-                                                        class="w-full text-[10px] font-semibold px-2 py-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 transition">
-                                                    <i class="fa-solid fa-xmark mr-1"></i> Remove
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    }
+                    
 
                 </div>
             </div>

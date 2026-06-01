@@ -200,7 +200,6 @@ namespace Sharepoint.Controllers
                 FileType = ext,
                 FilePath = filePath,
                 FileUrl = $"/uploads/{moduleId}/{versionedFileName}",
-                UploadedBy = "Current User",
                 UploadedDate = DateTime.Now,
                 Description = description,
                 FileSize = fileSize,
@@ -369,27 +368,6 @@ namespace Sharepoint.Controllers
                 file.DeletedBy = "Current User";
                 _context.SaveChanges();
             }
-            return RedirectToAction("Module", new { id = moduleId });
-        }
-
-
-
-
-        [HttpPost]
-        public IActionResult PermanentDeleteFile(int fileId, string moduleId)
-        {
-            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
-
-            if (file != null)
-            {
-                // Now actually delete the physical file
-                if (System.IO.File.Exists(file.FilePath))
-                    System.IO.File.Delete(file.FilePath);
-
-                _context.ModuleFiles.Remove(file);
-                _context.SaveChanges();
-            }
-
             return RedirectToAction("Module", new { id = moduleId });
         }
 
