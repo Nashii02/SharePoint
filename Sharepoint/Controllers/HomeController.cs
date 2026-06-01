@@ -391,9 +391,24 @@ namespace Sharepoint.Controllers
         }
 
 
+        public IActionResult DownloadFile(string moduleId, string fileName)
+        {
+            if (string.IsNullOrEmpty(moduleId) || string.IsNullOrEmpty(fileName))
+                return BadRequest("Invalid file.");
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", moduleId);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var bytes = System.IO.File.ReadAllBytes(filePath);
+            var contentType = "application/octet-stream"; // forces download
+            return File(bytes, contentType, fileName);
+        }
 
 
-        
+
 
 
 
