@@ -298,7 +298,7 @@
         position: relative;
     }
 
-        .input-icon-wrap svg {
+        .input-icon-wrap > svg {
             position: absolute;
             right: 12px;
             top: 50%;
@@ -307,6 +307,7 @@
             height: 15px;
             color: #a0b8a8;
             pointer-events: none;
+            z-index: 1; /* ADD THIS */
         }
 
         .input-icon-wrap input {
@@ -325,6 +326,7 @@
         display: flex;
         align-items: center;
         padding: 0;
+        z-index: 2; /* ADD THIS */
     }
 
         .toggle-pw:hover {
@@ -334,6 +336,7 @@
         .toggle-pw svg {
             width: 15px;
             height: 15px;
+            pointer-events: none;
         }
 
     /* Avatar preview */
@@ -670,20 +673,31 @@
                                 </div>
                                 <div class="avatar-preview-info">
                                     <span>JPG, PNG, GIF, or WEBP — max 5 MB</span>
+                                    <button type="button" onclick="document.getElementById('AvatarFile').click()"
+                                            style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:9px 18px;background:#1C3667;color:white;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none;">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        Upload Photo
+                                    </button>
+                                    <span id="fileNameLabel" style="font-size:11px;color:#a0b8a8;margin-top:4px;">No file chosen</span>
                                 </div>
                             </div>
 
                             <input type="file" id="AvatarFile" name="AvatarFile"
                                    accept="image/jpeg,image/png,image/gif,image/webp"
-                                   onchange="previewAvatar(this)" />
+                                   onchange="previewAvatar(this)"
+                                   style="display:none;" />
+
                             @if (hasAvatar)
                             {
                                 <input type="hidden" name="RemoveAvatar" id="RemoveAvatarInput" value="false" />
                                 <button type="button" class="checkbox-row" id="removeAvatarBtn"
                                         style="width:100%; border:1.5px solid #fca5a5; background:#fff5f5; margin-top:12px; cursor:pointer;"
                                         onclick="toggleRemoveAvatar()">
-                                    <span id="removeAvatarIcon" style="width:16px;height:16px;border:2px solid #b91c1c;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                                    </span>
+                                    <span id="removeAvatarIcon" style="width:16px;height:16px;border:2px solid #b91c1c;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;"></span>
                                     <span style="font-size:13px;font-weight:600;color:#b91c1c;">Remove current avatar</span>
                                 </button>
                             }
@@ -783,7 +797,7 @@
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <h3>Danger Zone</h3>
+                <h3>Deactivate Account</h3>
             </div>
             <div class="card-body">
                 <p class="danger-text">
@@ -847,9 +861,11 @@
         const input = document.getElementById(fieldId);
         const isHidden = input.type === 'password';
         input.type = isHidden ? 'text' : 'password';
-        btn.innerHTML = isHidden
-            ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/></svg>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+        const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        const eyeOff = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/></svg>`;
+
+        btn.innerHTML = isHidden ? eyeOff : eyeOpen;
     }
 
     function checkStrength(val) {
@@ -882,9 +898,9 @@
 
     function previewAvatar(input) {
         if (!input.files || !input.files[0]) return;
-        // Uncheck remove if user picks a new file
-        const removeCheckbox = document.getElementById('RemoveAvatar');
-        if (removeCheckbox) removeCheckbox.checked = false;
+
+        const label = document.getElementById('fileNameLabel');
+        if (label) label.textContent = input.files[0].name;
 
         const reader = new FileReader();
         reader.onload = function (e) {

@@ -1,6 +1,9 @@
 ﻿@{
     ViewData["Title"] = "Work Instructions";
     var categories = ViewBag.Categories as List<Sharepoint.Models.WorkCategory> ?? new();
+    var docCounts = ViewBag.DocCounts as Dictionary<int, int> ?? new();
+    var favoriteIds = ViewBag.FavoriteIds as HashSet<int> ?? new();
+    bool isLoggedIn = User.Identity?.IsAuthenticated == true;
 }
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -23,6 +26,7 @@
         gap: 20px;
     }
 
+    /* ── Card ── */
     .wi-card {
         position: relative;
         display: flex;
@@ -66,6 +70,13 @@
             transition: transform 0.08s ease, box-shadow 0.08s ease;
         }
 
+        /* Pinned card glows gold */
+        .wi-card.is-favorited {
+            border-left-color: #f59e0b;
+            border-bottom-color: #f59e0b;
+            box-shadow: 0 2px 12px rgba(245,158,11,0.18);
+        }
+
     .wi-card-icon {
         flex-shrink: 0;
         width: 44px;
@@ -92,7 +103,7 @@
         font-size: 15px;
         font-weight: 700;
         color: #1C3667;
-        margin: 0 0 6px 0;
+        margin: 0 0 4px 0;
     }
 
     .wi-card-desc {
@@ -108,7 +119,7 @@
         opacity: 0;
         transform: translateX(-4px);
         transition: opacity 0.2s, transform 0.2s;
-        margin-top: 2px;
+        align-self: center; /* ← replace margin-top: 2px with this */
     }
 
         .wi-card-arrow svg {
@@ -116,6 +127,74 @@
             height: 18px;
         }
 
+    /* ── Doc-count badge ── */
+    .doc-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 2px 8px;
+        background: #ECFFEC;
+        border: 1px solid #c8e6d4;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #1C3667;
+        opacity: 0.85;
+    }
+
+        .doc-count-badge svg {
+            width: 11px;
+            height: 11px;
+        }
+
+    /* ── Favourite / pin star ── */
+    .fav-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #d1d5db;
+        opacity: 0;
+        transition: opacity 0.2s, color 0.2s, background 0.15s, transform 0.15s;
+        z-index: 2;
+    }
+
+        .fav-btn svg {
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+        }
+
+    /* always show star if card is already favorited */
+    .wi-card.is-favorited .fav-btn {
+        opacity: 1;
+        color: #f59e0b;
+    }
+
+    .wi-card:hover .fav-btn {
+        opacity: 1;
+    }
+
+    .fav-btn:hover {
+        color: #f59e0b;
+        background: #fef9ec;
+        transform: scale(1.15);
+    }
+
+    .fav-btn.is-favorited {
+        color: #f59e0b;
+    }
+
+    /* ── Delete btn ── */
     .delete-cat-btn {
         position: absolute;
         bottom: 8px;
@@ -124,12 +203,13 @@
         transition: opacity 0.2s, background-color 0.15s, border-color 0.15s, color 0.15s;
     }
 
-    .delete-cat-btn:hover {
-        background-color: #dc3545 !important;
-        border-color: #fca5a5 !important;
-        color: white !important;
-    }
+        .delete-cat-btn:hover {
+            background-color: #dc3545 !important;
+            border-color: #fca5a5 !important;
+            color: white !important;
+        }
 
+    /* ── Add card ── */
     .wi-card-add {
         display: flex;
         flex-direction: column;
@@ -161,6 +241,44 @@
             opacity: 1;
         }
 
+    /* ── Sort bar ── */
+    .sort-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1.5px solid #1C3667;
+        color: #1C3667;
+        background: transparent;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s;
+        white-space: nowrap;
+    }
+
+        .sort-btn:hover {
+            background: #1C3667;
+            color: white;
+        }
+
+        .sort-btn.active {
+            background: #1C3667;
+            color: white;
+        }
+
+            .sort-btn.active svg {
+                display: inline;
+            }
+
+        .sort-btn svg {
+            width: 13px;
+            height: 13px;
+            display: none;
+        }
+
+    /* ── Icon picker ── */
     .icon-option {
         display: flex;
         align-items: center;
@@ -178,59 +296,75 @@
             border-color: #1C3667;
             background: #ECFFEC;
         }
+
+    /* ── Favorites section label ── */
+    .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #1C3667;
+        opacity: 0.45;
+        margin: 0 0 10px 2px;
+    }
 </style>
 
 <div class="min-h-screen bg-[#ECFFEC]">
 
+    <!-- HERO -->
     <section class="bg-[#1C3667] text-white relative overflow-hidden">
-
-        <!-- Circuit as full background -->
         <img src="~/images/circuit.png"
              class="absolute inset-0 w-full h-full object-cover filter brightness-0 invert opacity-10"
-             style="z-index: 0;" />
-
-        <!-- Circuit masked to logo shape -->
+             style="z-index:0;" />
         <div class="absolute right-10 hidden md:block"
-             style="z-index: 1; width: 320px; height: 320px; top: 50%; transform: translateY(-38%);
-                mask-image: url('/images/NoBGLogo.png');
-                mask-size: contain;
-                mask-repeat: no-repeat;
-                mask-position: center;
-                opacity: 0.25;">
-            <img src="~/images/circuit.png"
-                 style="height: 100%; width: 100%; object-fit: cover;"
+             style="z-index:1;width:320px;height:320px;top:50%;transform:translateY(-38%);
+                    mask-image:url('/images/NoBGLogo.png');mask-size:contain;
+                    mask-repeat:no-repeat;mask-position:center;opacity:0.25;">
+            <img src="~/images/circuit.png" style="height:100%;width:100%;object-fit:cover;"
                  class="filter brightness-0 invert" />
         </div>
-
-        <!-- Logo outline on top -->
-        <div class="absolute right-10 hidden md:block" style="z-index: 2; top: 50%; transform: translateY(-38%); opacity: 0.15;">
+        <div class="absolute right-10 hidden md:block"
+             style="z-index:2;top:50%;transform:translateY(-38%);opacity:0.15;">
             <img src="~/images/NoBGLogo.png" class="w-80 h-80 object-contain filter brightness-0 invert" />
         </div>
-
-        <!-- Content -->
-        <div class="max-w-7xl mx-auto px-6 py-10 relative" style="z-index: 2;">
-
+        <div class="max-w-7xl mx-auto px-6 py-10 relative" style="z-index:2;">
             <div class="max-w-xl pl-20">
-                <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">WORK <br />INSTRUCTIONS</h1>
-                <div class="mt-8 space-y-3 flex flex-col items-center">
-                    <div class="flex gap-3 translate-x-10">
-                        @for (int i = 0; i < 5; i++)
-                        {
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                        }
+                <h1 style="letter-spacing:-1px;" class="text-5xl font-bold leading-none">
+                    WORK <br />
+                    <span id="typewriter"></span>
+                </h1>
+
+                <div class="mt-8 relative inline-flex items-center">
+
+                    <!-- Typewriter card — adjust -left until it sits just on the left edge of dots -->
+                    <div class="absolute -left-30" style="width: 200px;">
+                        <p class="text-md fw-bold tracking-wide m-0" style="color:#E0E0E0">
+                            <span id="typewriter2"></span>
+                        </p>
                     </div>
-                    <div class="flex gap-3 translate-x-10">
-                        @for (int i = 0; i < 5; i++)
-                        {
-                            <div class="w-2 h-2 bg-white rounded-full"></div>
-                        }
+
+                    <!-- Dots — unchanged -->
+                    <div class="flex flex-col gap-3 translate-x-64">
+                        <div class="flex gap-3">
+                            @for (int i = 0; i < 5; i++)
+                            {
+                                <div class="w-2 h-2 bg-white rounded-full"></div>
+                            }
+                        </div>
+                        <div class="flex gap-3">
+                            @for (int i = 0; i < 5; i++)
+                            {
+                                <div class="w-2 h-2 bg-white rounded-full"></div>
+                            }
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
-
     </section>
 
+    <!-- ALERTS -->
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="max-w-7xl mx-auto px-8 pt-6">
@@ -250,25 +384,84 @@
         </div>
     }
 
+    <!-- CARDS -->
     <div class="wi-cards-section-wrapper">
+        <section class="wi-cards-section" style="position:relative;overflow:hidden;">
 
-        <section class="wi-cards-section" style="position:relative; overflow:hidden;">
+            <!-- SORT BAR -->
+            <div class="flex items-center gap-2 mb-6 flex-wrap">
+                <span class="text-xs font-semibold text-[#1C3667] uppercase tracking-wider mr-1 opacity-60">Sort by</span>
+                <button class="sort-btn active" data-sort="default">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Default
+                </button>
+                <button class="sort-btn" data-sort="alpha">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    A – Z
+                </button>
+                <button class="sort-btn" data-sort="alpha-desc">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Z – A
+                </button>
+                <button class="sort-btn" data-sort="favorites">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    ★ Pinned first
+                </button>
+            </div>
+
+            <!-- GRID -->
             <div class="wi-cards-grid" id="cardsGrid">
-                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); opacity:0.08; pointer-events:none; z-index:0;">
-                    <img src="~/images/NoBGLogo.png" style="width:500px; height:500px; object-fit:contain; position:sticky; top:calc(50vh - 250px);" />
+
+                <!-- Watermark -->
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.08;pointer-events:none;z-index:0;">
+                    <img src="~/images/NoBGLogo.png" style="width:500px;height:500px;object-fit:contain;position:sticky;top:calc(50vh - 250px);" />
                 </div>
+
                 @foreach (var cat in categories)
                 {
-                    <div class="wi-card" data-title="@cat.Name" data-desc="@cat.Description"
-                         onclick="window.location='/WorkInstructions/Upload?category=@cat.Slug'">
+                    bool isFav = favoriteIds.Contains(cat.Id);
+                    int count = docCounts.TryGetValue(cat.Id, out var c) ? c : 0;
 
-                        <div class="wi-card-icon">
-                            @Html.Raw(GetIconSvg(cat.Icon))
-                        </div>
+                    <div class="wi-card category-card @(isFav ? "is-favorited" : "")"
+                         data-name="@cat.Name"
+                         data-title="@cat.Name"
+                         data-desc="@cat.Description"
+                         data-id="@cat.Id"
+                         data-index="0"
+                         data-favorited="@(isFav ? "1" : "0")"
+                         onclick="handleCardClick(event, '/WorkInstructions/Upload?category=@cat.Slug')">
+
+                        <!-- ★ Pin button (only for logged-in users) -->
+                        @if (isLoggedIn)
+                        {
+                            <button class="fav-btn @(isFav ? "is-favorited" : "")"
+                                    title="@(isFav ? "Unpin" : "Pin to top")"
+                                    onclick="toggleFavorite(event, this, @cat.Id)">
+                                <!-- filled star when favorited, outline when not -->
+                                <svg viewBox="0 0 24 24" fill="@(isFav ? "currentColor" : "none")"
+                                     stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                            </button>
+                        }
+
+                        <div class="wi-card-icon">@Html.Raw(GetIconSvg(cat.Icon))</div>
+
                         <div class="wi-card-body">
                             <h3 class="wi-card-title">@cat.Name</h3>
                             <p class="wi-card-desc">@cat.Description</p>
+
+                            <!-- Doc count badge -->
+                            <span class="doc-count-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                @count @(count == 1 ? "file" : "files")
+                            </span>
                         </div>
+
                         <div class="wi-card-arrow">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -282,7 +475,8 @@
                                   class="delete-form stop-prop" style="display:contents;">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@cat.Id" />
-                                <button type="submit" class="delete-cat-btn flex items-center justify-center w-6 h-6 rounded-md bg-white border border-[#c8e6d4] text-red-400"
+                                <button type="submit"
+                                        class="delete-cat-btn flex items-center justify-center w-6 h-6 rounded-md bg-white border border-[#c8e6d4] text-red-400"
                                         title="Delete category">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
                                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -305,11 +499,9 @@
                     <span>Add Category</span>
                 </div>
 
-                <!-- No results message (hidden by default) -->
                 <p id="noResultsMsg" class="hidden text-sm text-gray-400 font-semibold col-span-full text-center py-10">
                     No categories match your search.
                 </p>
-
             </div>
         </section>
 
@@ -343,13 +535,13 @@
                         <label class="block text-xs font-semibold text-[#1C3667] mb-2">Icon</label>
                         <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1" id="iconPicker">
                             @foreach (var icon in new[] {
-                                                    "folder", "file-text", "server", "shield", "monitor", "users", "settings", "tool",
-                                                    "database", "globe", "mail", "code",
-                                                    "clipboard", "bar-chart", "trend-up", "edit", "image", "cpu", "grid", "sigma",
-                                                    "truck", "plane", "building", "key", "activity", "package", "food",
-                                                    "refresh", "lock", "calendar", "pie-chart", "wifi", "layers","banknote", "number-1",
-                                                    "sticky-note", "door-exit", "finance", "ehss", "fleet", "chat", "ticket", "dots", "crane", "market"
-                                                    })
+                                                        "folder","file-text","server","shield","monitor","users","settings","tool",
+                                                        "database","globe","mail","code","clipboard","bar-chart","trend-up","edit",
+                                                        "image","cpu","grid","sigma","truck","plane","building","key","activity",
+                                                        "package","food","refresh","lock","calendar","pie-chart","wifi","layers",
+                                                        "banknote","number-1","sticky-note","door-exit","finance","ehss","fleet",
+                                                        "chat","ticket","dots","crane","market"
+                                                        })
                             {
                                 <div class="icon-option @(icon == "folder" ? "selected" : "")" data-icon="@icon" title="@icon">
                                     @Html.Raw(GetIconSvg(icon))
@@ -377,62 +569,117 @@
 @functions {
     string GetIconSvg(string icon) => icon switch
     {
-        // ── Originals ──
-        "file-text"  => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>",
-        "server"     => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='2' y='2' width='20' height='8' rx='2' ry='2'/><rect x='2' y='14' width='20' height='8' rx='2' ry='2'/><line x1='6' y1='6' x2='6.01' y2='6'/><line x1='6' y1='18' x2='6.01' y2='18'/></svg>",
-        "shield"     => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>",
-        "message"    => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>",
-        "monitor"    => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='2' y='3' width='20' height='14' rx='2' ry='2'/><line x1='8' y1='21' x2='16' y2='21'/><line x1='12' y1='17' x2='12' y2='21'/></svg>",
-        "users"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/></svg>",
-        "settings"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/></svg>",
-        "tool"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/></svg>",
-        "database"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/></svg>",
-        "globe"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>",
-        "mail"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>",
-        "code"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='16 18 22 12 16 6'/><polyline points='8 6 2 12 8 18'/></svg>",
-
-        // ── New icons ──
-        "clipboard"  => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><rect x='8' y='2' width='8' height='4' rx='1' ry='1'/></svg>",
-        "bar-chart"  => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><line x1='18' y1='20' x2='18' y2='10'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='6' y1='20' x2='6' y2='14'/><line x1='2' y1='20' x2='22' y2='20'/></svg>",
-        "trend-up"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='23 6 13.5 15.5 8.5 10.5 1 18'/><polyline points='17 6 23 6 23 12'/></svg>",
-        "edit"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>",
-        "image"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>",
-        "cpu"        => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='4' y='4' width='16' height='16' rx='2'/><rect x='9' y='9' width='6' height='6'/><line x1='9' y1='1' x2='9' y2='4'/><line x1='15' y1='1' x2='15' y2='4'/><line x1='9' y1='20' x2='9' y2='23'/><line x1='15' y1='20' x2='15' y2='23'/><line x1='20' y1='9' x2='23' y2='9'/><line x1='20' y1='14' x2='23' y2='14'/><line x1='1' y1='9' x2='4' y2='9'/><line x1='1' y1='14' x2='4' y2='14'/></svg>",
-        "grid"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/></svg>",
-        "sigma"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M18 7V4H6l6 8-6 8h12v-3'/></svg>",
-        "truck"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='1' y='3' width='15' height='13' rx='1'/><path d='M16 8h4l3 5v3h-7V8z'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>",
-        "plane"      => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/></svg>",
-        "building"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/><polyline points='9 22 9 12 15 12 15 22'/></svg>",
-        "key"        => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4'/></svg>",
-        "activity"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='22 12 18 12 15 21 9 3 6 12 2 12'/></svg>",
-        "package"    => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><line x1='16.5' y1='9.4' x2='7.5' y2='4.21'/><path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/><polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' y1='22.08' x2='12' y2='12'/></svg>",
-        "refresh"    => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='23 4 23 10 17 10'/><polyline points='1 20 1 14 7 14'/><path d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/></svg>",
-        "lock"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg>",
-        "calendar"   => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>",
-        "pie-chart"  => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21.21 15.89A10 10 0 1 1 8 2.83'/><path d='M22 12A10 10 0 0 0 12 2v10z'/></svg>",
-        "wifi"       => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M5 12.55a11 11 0 0 1 14.08 0'/><path d='M1.42 9a16 16 0 0 1 21.16 0'/><path d='M8.53 16.11a6 6 0 0 1 6.95 0'/><line x1='12' y1='20' x2='12.01' y2='20'/></svg>",
-        "layers"     => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>",
+        "file-text" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>",
+        "server" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='2' y='2' width='20' height='8' rx='2' ry='2'/><rect x='2' y='14' width='20' height='8' rx='2' ry='2'/><line x1='6' y1='6' x2='6.01' y2='6'/><line x1='6' y1='18' x2='6.01' y2='18'/></svg>",
+        "shield" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>",
+        "message" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>",
+        "monitor" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='2' y='3' width='20' height='14' rx='2' ry='2'/><line x1='8' y1='21' x2='16' y2='21'/><line x1='12' y1='17' x2='12' y2='21'/></svg>",
+        "users" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/></svg>",
+        "settings" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/></svg>",
+        "tool" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/></svg>",
+        "database" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/></svg>",
+        "globe" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>",
+        "mail" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>",
+        "code" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='16 18 22 12 16 6'/><polyline points='8 6 2 12 8 18'/></svg>",
+        "clipboard" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><rect x='8' y='2' width='8' height='4' rx='1' ry='1'/></svg>",
+        "bar-chart" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><line x1='18' y1='20' x2='18' y2='10'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='6' y1='20' x2='6' y2='14'/><line x1='2' y1='20' x2='22' y2='20'/></svg>",
+        "trend-up" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='23 6 13.5 15.5 8.5 10.5 1 18'/><polyline points='17 6 23 6 23 12'/></svg>",
+        "edit" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>",
+        "image" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>",
+        "cpu" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='4' y='4' width='16' height='16' rx='2'/><rect x='9' y='9' width='6' height='6'/><line x1='9' y1='1' x2='9' y2='4'/><line x1='15' y1='1' x2='15' y2='4'/><line x1='9' y1='20' x2='9' y2='23'/><line x1='15' y1='20' x2='15' y2='23'/><line x1='20' y1='9' x2='23' y2='9'/><line x1='20' y1='14' x2='23' y2='14'/><line x1='1' y1='9' x2='4' y2='9'/><line x1='1' y1='14' x2='4' y2='14'/></svg>",
+        "grid" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/></svg>",
+        "sigma" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M18 7V4H6l6 8-6 8h12v-3'/></svg>",
+        "truck" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='1' y='3' width='15' height='13' rx='1'/><path d='M16 8h4l3 5v3h-7V8z'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>",
+        "plane" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/></svg>",
+        "building" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/><polyline points='9 22 9 12 15 12 15 22'/></svg>",
+        "key" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4'/></svg>",
+        "activity" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='22 12 18 12 15 21 9 3 6 12 2 12'/></svg>",
+        "package" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><line x1='16.5' y1='9.4' x2='7.5' y2='4.21'/><path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/><polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' y1='22.08' x2='12' y2='12'/></svg>",
+        "refresh" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polyline points='23 4 23 10 17 10'/><polyline points='1 20 1 14 7 14'/><path d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/></svg>",
+        "lock" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg>",
+        "calendar" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>",
+        "pie-chart" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M21.21 15.89A10 10 0 1 1 8 2.83'/><path d='M22 12A10 10 0 0 0 12 2v10z'/></svg>",
+        "wifi" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M5 12.55a11 11 0 0 1 14.08 0'/><path d='M1.42 9a16 16 0 0 1 21.16 0'/><path d='M8.53 16.11a6 6 0 0 1 6.95 0'/><line x1='12' y1='20' x2='12.01' y2='20'/></svg>",
+        "layers" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>",
         "banknote" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><rect x='2' y='6' width='20' height='12' rx='2'/><circle cx='12' cy='12' r='2'/><path d='M6 12h.01M18 12h.01'/></svg>",
         "number-1" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><circle cx='12' cy='12' r='10'/><text x='12' y='17' text-anchor='middle' font-size='13' font-weight='bold' fill='currentColor' stroke='none'>1</text></svg>",
-        "sticky-note" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z'/><polyline points='15 3 15 9 21 9'/><line x1='8' y1='13' x2='16' y2='13'/><line x1='8' y1='17' x2='13' y2='17'/></svg>",       
+        "sticky-note" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z'/><polyline points='15 3 15 9 21 9'/><line x1='8' y1='13' x2='16' y2='13'/><line x1='8' y1='17' x2='13' y2='17'/></svg>",
         "door-exit" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='currentColor' width='22' height='22'><path fill-rule='evenodd' d='M5.625 1.625c0-.207.168-.375.375-.375h6.375c.207 0 .375.168.375.375v10.75a.375.375 0 0 1-.375.375H8.5a.625.625 0 1 0 0 1.25h3.875c.898 0 1.625-.727 1.625-1.625V1.625C14 .728 13.273 0 12.375 0H6c-.897 0-1.625.728-1.625 1.625V2.5a.625.625 0 1 0 1.25 0zm2 3.375a.875.875 0 1 1 1.75 0a.875.875 0 0 1-1.75 0M8.5 2.875a2.125 2.125 0 1 0 0 4.25a2.125 2.125 0 0 0 0-4.25M3.809 8.808L5.116 7.5l-.765-.765a.38.38 0 0 0-.265-.11H2.625a.625.625 0 1 1 0-1.25h1.46c.432 0 .845.171 1.15.476L6.44 7.058h.001l.71.71l.497.497c.07.07.166.11.265.11h1.461a.625.625 0 1 1 0 1.25h-1.46c-.432 0-.845-.171-1.15-.476l-.055-.055l-.866.866l.305.305c.305.305.476.718.476 1.15v1.96a.625.625 0 1 1-1.25 0v-1.96c0-.1-.04-.196-.11-.266l-.747-.747l-.268-.268l-.015.015a1.63 1.63 0 0 1-1.15.476H.626a.625.625 0 1 1 0-1.25h2.46c.1 0 .196-.04.266-.11l.456-.456z' clip-rule='evenodd'/></svg>",
         "finance" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2048' fill='currentColor' width='22' height='22'><path d='M959 1026q-48-2-99-12t-94-31q-17-8-27-23t-10-35q0-26 19-45t45-19q13 0 27 6q66 29 138 30V678q-37-13-71-32t-61-45t-43-61t-16-77q0-41 16-74t43-57t61-41t71-25q0-29 16-50t48-22q27 0 45 18t19 46q35 2 66 9t65 17l-44 120q-21-8-43-12t-44-6v200q34 12 68 32t62 47t45 61t17 74q0 44-15 80t-40 63t-61 45t-76 28q0 28-17 48t-47 20q-25 0-43-17t-20-41m127-143q28-11 46-30t18-52q0-12-6-23t-16-20t-21-17t-21-14zM895 463q0 28 20 46t43 30V400q-3 1-13 5t-12 7q-14 5-26 20t-12 31m745 351q92 36 167 96t128 137t83 169t30 191q0 88-23 170t-64 153t-100 129t-130 101t-153 65t-170 23q-104 0-202-33t-181-96q-84 63-182 96t-203 33q-89 0-170-23t-153-64t-129-100t-100-130t-65-153t-23-171q0-99 29-190t83-169t129-138t167-96q-24-84-24-173q0-88 23-170t64-153t100-129T701 88t153-65t170-23q88 0 170 23t153 65t129 100t100 130t65 153t23 170t-24 173m-616-686q-106 0-199 40T662 279T552 442t-40 199q0 106 40 199t109 163t163 110t200 41q106 0 199-40t163-110t110-163t40-200q0-106-40-199t-109-163t-163-110t-200-41M640 1920q106 0 199-40t163-110t110-163t40-200q0-68-20-134q-54 9-108 9q-105 0-203-33t-183-97q-7 4-13 5q-88 26-133 91t-46 157v2h126q26 0 45 19t19 45q0 31-17 44t-41 18t-51 4t-46-2q35 59 93 92t128 34q29 0 54-6t52-17q13-5 26-5q26 0 45 18t19 45q0 29-22 47t-54 28t-65 14t-55 4q-61 0-117-18t-104-52t-84-80t-57-104q-16 0-31-3t-26-10t-19-19t-7-32q0-26 17-44t44-20q0-56 14-109t41-100t67-84t94-60q-23-29-43-60t-38-64q-74 29-133 77t-103 111t-66 136t-23 153q0 106 40 199t109 163t163 110t200 41m768 0q106 0 199-40t163-110t110-163t40-200q0-79-23-152t-66-136t-103-110t-133-78q-38 74-93 136t-124 108l93 126l140-187q19-26 51-26q27 0 46 19t19 46q0 20-13 38l-180 239v105h41q22 0 42 4t33 18t14 42q0 28-13 41t-33 19t-42 5t-42-1v41q0 22-4 42t-18 33t-42 14q-28 0-41-13t-19-33t-5-42t1-42h-41q-22 0-41-4t-33-18t-13-42q0-28 13-41t32-19t42-5t41 1v-105l-142-194l-6 2q12 41 17 84t5 85q0 118-40 226t-119 197q64 44 136 67t151 23'/></svg>",
-        "ehss" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 256 256' fill='currentColor' width='24' height='24'><g fill='currentColor'><path d='M206.63 94.63L173.25 128L128 82.75l33.37-33.38a32 32 0 0 1 45.26 45.26M49.37 161.37a32 32 0 0 0 45.26 45.26L128 173.25L82.75 128ZM82.75 128L128 82.75L94.63 49.37a32 32 0 0 0-45.26 45.26Zm90.5 0L128 173.25l33.37 33.38a32 32 0 0 0 45.26-45.26Z' opacity='.2'></path><path d='m184.57 128l27.71-27.72a40 40 0 1 0-56.56-56.56L128 71.43l-27.72-27.71a40 40 0 1 0-56.56 56.56L71.43 128l-27.71 27.72a40 40 0 1 0 56.56 56.56L128 184.57l27.72 27.71a40 40 0 1 0 56.56-56.56ZM167 55a24 24 0 1 1 34 34l-27.72 27.72l-33.97-33.97Zm-5.09 73L128 161.94L94.06 128L128 94.06ZM55 89a24 24 0 1 1 34-34l27.72 27.72l-33.97 33.97Zm34 112a24 24 0 1 1-34-34l27.72-27.72l33.94 33.94Zm112 0a24 24 0 0 1-34 0l-27.72-27.72l33.94-33.94L201 167a24 24 0 0 1 0 34m-85-73a12 12 0 1 1 12 12a12 12 0 0 1-12-12'></path></g></svg>",
-        "fleet" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' width='24' height='24'><g fill='none'><path d='M10 19h13v-5l-.4-1H10.4l-.4 1z'></path><path d='M23 19H10m13 0v-5l-2-5h-9l-2.05 4.975L10 19m13 0v1.5M10 19v1.5M21.85 13h-10.7M20 16.004h.004V16H20zm-7 0h.004V16H13zM1 13v5a1 1 0 0 0 1 1h5m-6-6V5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1M1 13h6m-2.5 6.5l-1 1m.5-4.496h.004V16H4z'></path></g></svg>",
-        "chat" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 24 24' fill='currentColor' width='24' height='24'><path d='M22 12.41V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v18l4-4h3.29A7.001 7.001 0 0 0 23 16c0-1.31-.37-2.54-1-3.59M5.17 16L4 17.17V4h16v6.26A6.96 6.96 0 0 0 16 9c-1.9 0-3.63.77-4.89 2H6v2h3.69c-.44.91-.69 1.93-.69 3zM16 20.85c-2.68 0-4.85-2.17-4.85-4.85s2.17-4.85 4.85-4.85c2.67 0 4.85 2.17 4.85 4.85s-2.18 4.85-4.85 4.85M18 9H6V7h12zm-1.5 6.82l2.44 1.41l-.75 1.3L15 16.69V13h1.5z'></path></svg>",
-        "ticket" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 24 24' width='24' height='24' fill='currentColor'><path d='M19 18.75H5A1.76 1.76 0 0 1 3.25 17v-2.5a.76.76 0 0 1 .75-.75a1.75 1.75 0 0 0 0-3.5a.76.76 0 0 1-.75-.75V7A1.76 1.76 0 0 1 5 5.25h14A1.76 1.76 0 0 1 20.75 7v2.5a.76.76 0 0 1-.75.75a1.75 1.75 0 0 0 0 3.5a.76.76 0 0 1 .75.75V17A1.76 1.76 0 0 1 19 18.75M4.75 15.16V17a.25.25 0 0 0 .25.25h14a.25.25 0 0 0 .25-.25v-1.84a3.25 3.25 0 0 1 0-6.32V7a.25.25 0 0 0-.25-.25H5a.25.25 0 0 0-.25.25v1.84a3.25 3.25 0 0 1 0 6.32'></path></svg>",
-        "dots" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 24 24' width='24' height='24' fill='currentColor'><g fill='currentColor'><rect width='4' height='4' x='3' y='10' rx='2'></rect><rect width='4' height='4' x='10' y='10' rx='2'></rect><rect width='4' height='4' x='17' y='10' rx='2'></rect></g></svg>",
-        "crane" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 512 512' width='24' height='24' fill='currentColor'><path d='M306.875 18.22c-.47-.002-.935.014-1.406.03c-.158.005-.313.024-.47.03a37 37 0 0 0-4.78.47c-3.61.597-7.01 1.7-10.158 3.22L49.595 120.062c-.918.42-1.808.877-2.688 1.343c-.598.318-1.2.63-1.78.97c-13.697 7.67-22.918 21.836-24.188 37.655c-.058.635-.094 1.27-.125 1.907a47.06 47.06 0 0 0 4.156 21.844c10.908 24.058 39.464 34.588 64.25 23.407l.093-.03l232.062-116.19l.156-.095l.158-.063c19.685-8.925 28.3-31.436 19.656-50.5c-6.28-13.85-19.92-22.07-34.47-22.093zm.28 18.718c8.924.308 16.542 6.77 18.064 15.968c1.737 10.51-5.208 20.23-15.72 21.97c-10.512 1.738-20.2-5.21-21.938-15.72s5.208-20.23 15.72-21.968c1.313-.218 2.6-.295 3.874-.25M354 86.656c-5.762 8.854-14.006 16.267-24.28 21c-.108.05-.206.108-.314.156l-16.47 8.25l57.533 97.907c7.09-11.768 19.637-19.107 33.06-19.845c1.59-.087 3.18-.07 4.783.03zM67.906 135.03c.484-.005.96.015 1.438.032c13.393.478 24.876 10.217 27.156 24c2.606 15.75-7.873 30.426-23.625 33.032s-30.426-7.906-33.03-23.656c-2.607-15.75 7.903-30.395 23.655-33a29.5 29.5 0 0 1 4.406-.407zm60.188 73.595l-16.813 8.438l7.814 21.625l-50.78-8.22l-.064-.187a68 68 0 0 1-21.22-3.593l59.5 163.344l-.405.783l.75.187l16.906 46.406c4.612-4.79 9.704-9.125 15.22-12.875l-10.28-28.217l51.624 12.562h.03c3.962-.504 8-.78 12.095-.78c2.655 0 5.272.128 7.874.342l-72.25-199.812zm277.437 4.094q-.548.001-1.092.03c-8.72.434-16.66 5.983-19.844 14.78c-4.244 11.733 1.706 24.414 13.437 28.657c11.733 4.244 24.445-1.705 28.69-13.437c4.243-11.734-1.707-24.412-13.44-28.656a22.7 22.7 0 0 0-7.75-1.375zm39.158 9.81c2.728 8.395 2.806 17.714-.407 26.595a41 41 0 0 1-1.56 3.688l27.936 5l-4.375 51.25l-19.405 11.562l9.563 16.063l23.53-14.032l4.126-2.437l.406-4.783l6.313-73.937l.937-10.78l-2.03.124zm-80.094 12.376l-44 26.78l-.094.033v.03l-.063.03l.157.158l4.47 9.5l31.498 67.187l2.032 4.344l4.72.874l26.905 5l3.436-18.375l-22.22-4.126l-21.467-45.813l26.842-16.186c-7.77-7.738-12.248-18.393-12.218-29.438zM75.656 250.594l35.156 5.687l-18.593 39.845l-16.564-45.53zm52.406 12.906l18.344 50.78l-37.812-9.06l19.47-41.72zm-26.093 59.344l35.31 8.47l-19.03 36.31zm52.968 15.03l18.093 49.97l-39.28-9.53zm37.53 88.907c-39.29 0-71.475 29.325-76.062 67.345h22.5c4.46-25.5 26.83-45.03 53.563-45.03c26.73 0 49.074 19.53 53.53 45.03h22.5c-4.587-38.02-36.74-67.344-76.03-67.344zm0 41c-16.555 0-30.22 11.145-34.312 26.345h68.594c-4.092-15.2-17.725-26.344-34.28-26.344z'></path></svg>",
-        "market" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 32 32' width='24' height='24' fill='currentColor'><path d='M23 15.5a7.5 7.5 0 1 1 0 15a7.5 7.5 0 0 1 0-15M6.5 15a3.5 3.5 0 0 1 3.5 3.5v7a3.5 3.5 0 1 1-7 0v-7A3.5 3.5 0 0 1 6.5 15m9-6a3.5 3.5 0 0 1 3.5 3.5v2.438a9 9 0 0 0-2.773 13.985q-.353.076-.727.077a3.5 3.5 0 0 1-3.5-3.5v-13A3.5 3.5 0 0 1 15.5 9m8.212 9.139c-.228-.685-1.196-.685-1.424 0l-.94 2.827h-2.994c-.731 0-1.03.938-.434 1.361l2.406 1.707l-.928 2.791c-.23.688.554 1.268 1.145.849L23 25.93l2.457 1.743c.591.42 1.374-.161 1.145-.849l-.928-2.79l2.406-1.708c.596-.423.297-1.361-.433-1.361h-2.995zM24.5 3A3.5 3.5 0 0 1 28 6.5v9.016A8.96 8.96 0 0 0 23 14c-.688 0-1.357.08-2 .226V6.5A3.5 3.5 0 0 1 24.5 3'></path></svg>",
-        "food" => "<svg xmlns='http://www.w3.org/2000/svg' aria-hidden='true' role='img' viewBox='0 0 2048 2048' width='24' height='24' fill='currentColor'><path d='M1408 592q-26 0-45-19t-19-45q0-51 19-98t56-83l79-80q38-38 38-91q0-26 19-45t45-19t45 19t19 45q0 51-19 98t-56 83l-79 80q-38 38-38 91q0 26-19 45t-45 19m-384 0q-26 0-45-19t-19-45q0-51 19-98t56-83l79-80q38-38 38-91q0-26 19-45t45-19t45 19t19 45q0 51-19 98t-56 83l-79 80q-38 38-38 91q0 26-19 45t-45 19m832 176q40 0 75 15t61 41t41 61t15 75v384q0 40-15 75t-41 61t-61 41t-75 15h-57q-2 7-3 13t-4 12v39q0 66-25 124t-69 102t-102 69t-124 25h-384q-78 0-144-35t-110-93H334q-66 0-124-25t-102-68t-69-102t-25-125v-64h256q0-79 30-149t83-122t122-83t149-30q30 0 58 5t56 14V640h1024v128zM654 1152q-53 0-99 20t-82 55t-55 81t-20 100h370v-228q-26-13-54-20t-60-8m-320 512h441q-7-29-7-64v-64H153q10 28 28 51t41 41t52 26t60 10m463 67v1l1 2v-1zm867-131V768H896v832q0 40 15 75t41 61t61 41t75 15h384q40 0 75-15t61-41t41-61t15-75m256-256V960q0-26-19-45t-45-19h-64v512h64q26 0 45-19t19-45'></path></svg>",
-        // ── Default fallback (folder) ──
+        "ehss" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor' width='24' height='24'><g fill='currentColor'><path d='M206.63 94.63L173.25 128L128 82.75l33.37-33.38a32 32 0 0 1 45.26 45.26M49.37 161.37a32 32 0 0 0 45.26 45.26L128 173.25L82.75 128ZM82.75 128L128 82.75L94.63 49.37a32 32 0 0 0-45.26 45.26Zm90.5 0L128 173.25l33.37 33.38a32 32 0 0 0 45.26-45.26Z' opacity='.2'></path><path d='m184.57 128l27.71-27.72a40 40 0 1 0-56.56-56.56L128 71.43l-27.72-27.71a40 40 0 1 0-56.56 56.56L71.43 128l-27.71 27.72a40 40 0 1 0 56.56 56.56L128 184.57l27.72 27.71a40 40 0 1 0 56.56-56.56ZM167 55a24 24 0 1 1 34 34l-27.72 27.72l-33.97-33.97Zm-5.09 73L128 161.94L94.06 128L128 94.06ZM55 89a24 24 0 1 1 34-34l27.72 27.72l-33.97 33.97Zm34 112a24 24 0 1 1-34-34l27.72-27.72l33.94 33.94Zm112 0a24 24 0 0 1-34 0l-27.72-27.72l33.94-33.94L201 167a24 24 0 0 1 0 34m-85-73a12 12 0 1 1 12 12a12 12 0 0 1-12-12'/></g></svg>",
+        "fleet" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' width='24' height='24'><g fill='none'><path d='M10 19h13v-5l-.4-1H10.4l-.4 1z'/><path d='M23 19H10m13 0v-5l-2-5h-9l-2.05 4.975L10 19m13 0v1.5M10 19v1.5M21.85 13h-10.7M20 16.004h.004V16H20zm-7 0h.004V16H13zM1 13v5a1 1 0 0 0 1 1h5m-6-6V5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1M1 13h6m-2.5 6.5l-1 1m.5-4.496h.004V16H4z'/></g></svg>",
+        "chat" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' width='24' height='24'><path d='M22 12.41V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v18l4-4h3.29A7.001 7.001 0 0 0 23 16c0-1.31-.37-2.54-1-3.59M5.17 16L4 17.17V4h16v6.26A6.96 6.96 0 0 0 16 9c-1.9 0-3.63.77-4.89 2H6v2h3.69c-.44.91-.69 1.93-.69 3zM16 20.85c-2.68 0-4.85-2.17-4.85-4.85s2.17-4.85 4.85-4.85c2.67 0 4.85 2.17 4.85 4.85s-2.18 4.85-4.85 4.85M18 9H6V7h12zm-1.5 6.82l2.44 1.41l-.75 1.3L15 16.69V13h1.5z'/></svg>",
+        "ticket" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='currentColor'><path d='M19 18.75H5A1.76 1.76 0 0 1 3.25 17v-2.5a.76.76 0 0 1 .75-.75a1.75 1.75 0 0 0 0-3.5a.76.76 0 0 1-.75-.75V7A1.76 1.76 0 0 1 5 5.25h14A1.76 1.76 0 0 1 20.75 7v2.5a.76.76 0 0 1-.75.75a1.75 1.75 0 0 0 0 3.5a.76.76 0 0 1 .75.75V17A1.76 1.76 0 0 1 19 18.75M4.75 15.16V17a.25.25 0 0 0 .25.25h14a.25.25 0 0 0 .25-.25v-1.84a3.25 3.25 0 0 1 0-6.32V7a.25.25 0 0 0-.25-.25H5a.25.25 0 0 0-.25.25v1.84a3.25 3.25 0 0 1 0 6.32'/></svg>",
+        "dots" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='currentColor'><g fill='currentColor'><rect width='4' height='4' x='3' y='10' rx='2'/><rect width='4' height='4' x='10' y='10' rx='2'/><rect width='4' height='4' x='17' y='10' rx='2'/></g></svg>",
+        "crane" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='24' height='24' fill='currentColor'><path d='M306.875 18.22c-.47-.002-.935.014-1.406.03c-.158.005-.313.024-.47.03a37 37 0 0 0-4.78.47c-3.61.597-7.01 1.7-10.158 3.22L49.595 120.062c-.918.42-1.808.877-2.688 1.343c-.598.318-1.2.63-1.78.97c-13.697 7.67-22.918 21.836-24.188 37.655c-.058.635-.094 1.27-.125 1.907a47.06 47.06 0 0 0 4.156 21.844c10.908 24.058 39.464 34.588 64.25 23.407l.093-.03l232.062-116.19l.156-.095l.158-.063c19.685-8.925 28.3-31.436 19.656-50.5c-6.28-13.85-19.92-22.07-34.47-22.093zm.28 18.718c8.924.308 16.542 6.77 18.064 15.968c1.737 10.51-5.208 20.23-15.72 21.97c-10.512 1.738-20.2-5.21-21.938-15.72s5.208-20.23 15.72-21.968c1.313-.218 2.6-.295 3.874-.25M354 86.656c-5.762 8.854-14.006 16.267-24.28 21c-.108.05-.206.108-.314.156l-16.47 8.25l57.533 97.907c7.09-11.768 19.637-19.107 33.06-19.845c1.59-.087 3.18-.07 4.783.03zM67.906 135.03c.484-.005.96.015 1.438.032c13.393.478 24.876 10.217 27.156 24c2.606 15.75-7.873 30.426-23.625 33.032s-30.426-7.906-33.03-23.656c-2.607-15.75 7.903-30.395 23.655-33a29.5 29.5 0 0 1 4.406-.407zm60.188 73.595l-16.813 8.438l7.814 21.625l-50.78-8.22l-.064-.187a68 68 0 0 1-21.22-3.593l59.5 163.344l-.405.783l.75.187l16.906 46.406c4.612-4.79 9.704-9.125 15.22-12.875l-10.28-28.217l51.624 12.562h.03c3.962-.504 8-.78 12.095-.78c2.655 0 5.272.128 7.874.342l-72.25-199.812zm277.437 4.094q-.548.001-1.092.03c-8.72.434-16.66 5.983-19.844 14.78c-4.244 11.733 1.706 24.414 13.437 28.657c11.733 4.244 24.445-1.705 28.69-13.437c4.243-11.734-1.707-24.412-13.44-28.656a22.7 22.7 0 0 0-7.75-1.375zm39.158 9.81c2.728 8.395 2.806 17.714-.407 26.595a41 41 0 0 1-1.56 3.688l27.936 5l-4.375 51.25l-19.405 11.562l9.563 16.063l23.53-14.032l4.126-2.437l.406-4.783l6.313-73.937l.937-10.78l-2.03.124zm-80.094 12.376l-44 26.78l-.094.033v.03l-.063.03l.157.158l4.47 9.5l31.498 67.187l2.032 4.344l4.72.874l26.905 5l3.436-18.375l-22.22-4.126l-21.467-45.813l26.842-16.186c-7.77-7.738-12.248-18.393-12.218-29.438zM75.656 250.594l35.156 5.687l-18.593 39.845l-16.564-45.53zm52.406 12.906l18.344 50.78l-37.812-9.06l19.47-41.72zm-26.093 59.344l35.31 8.47l-19.03 36.31zm52.968 15.03l18.093 49.97l-39.28-9.53zm37.53 88.907c-39.29 0-71.475 29.325-76.062 67.345h22.5c4.46-25.5 26.83-45.03 53.563-45.03c26.73 0 49.074 19.53 53.53 45.03h22.5c-4.587-38.02-36.74-67.344-76.03-67.344zm0 41c-16.555 0-30.22 11.145-34.312 26.345h68.594c-4.092-15.2-17.725-26.344-34.28-26.344z'/></svg>",
+        "market" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='24' height='24' fill='currentColor'><path d='M23 15.5a7.5 7.5 0 1 1 0 15a7.5 7.5 0 0 1 0-15M6.5 15a3.5 3.5 0 0 1 3.5 3.5v7a3.5 3.5 0 1 1-7 0v-7A3.5 3.5 0 0 1 6.5 15m9-6a3.5 3.5 0 0 1 3.5 3.5v2.438a9 9 0 0 0-2.773 13.985q-.353.076-.727.077a3.5 3.5 0 0 1-3.5-3.5v-13A3.5 3.5 0 0 1 15.5 9m8.212 9.139c-.228-.685-1.196-.685-1.424 0l-.94 2.827h-2.994c-.731 0-1.03.938-.434 1.361l2.406 1.707l-.928 2.791c-.23.688.554 1.268 1.145.849L23 25.93l2.457 1.743c.591.42 1.374-.161 1.145-.849l-.928-2.79l2.406-1.708c.596-.423.297-1.361-.433-1.361h-2.995zM24.5 3A3.5 3.5 0 0 1 28 6.5v9.016A8.96 8.96 0 0 0 23 14c-.688 0-1.357.08-2 .226V6.5A3.5 3.5 0 0 1 24.5 3'/></svg>",
+        "food" => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2048' width='24' height='24' fill='currentColor'><path d='M1408 592q-26 0-45-19t-19-45q0-51 19-98t56-83l79-80q38-38 38-91q0-26 19-45t45-19t45 19t19 45q0 51-19 98t-56 83l-79 80q-38 38-38 91q0 26-19 45t-45 19m-384 0q-26 0-45-19t-19-45q0-51 19-98t56-83l79-80q38-38 38-91q0-26 19-45t45-19t45 19t19 45q0 51-19 98t-56 83l-79 80q-38 38-38 91q0 26-19 45t-45 19m832 176q40 0 75 15t61 41t41 61t15 75v384q0 40-15 75t-41 61t-61 41t-75 15h-57q-2 7-3 13t-4 12v39q0 66-25 124t-69 102t-102 69t-124 25h-384q-78 0-144-35t-110-93H334q-66 0-124-25t-102-68t-69-102t-25-125v-64h256q0-79 30-149t83-122t122-83t149-30q30 0 58 5t56 14V640h1024v128zM654 1152q-53 0-99 20t-82 55t-55 81t-20 100h370v-228q-26-13-54-20t-60-8m-320 512h441q-7-29-7-64v-64H153q10 28 28 51t41 41t52 26t60 10m463 67v1l1 2v-1zm867-131V768H896v832q0 40 15 75t41 61t61 41t75 15h384q40 0 75-15t61-41t41-61t15-75m256-256V960q0-26-19-45t-45-19h-64v512h64q26 0 45-19t19-45'/></svg>",
         _ => "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' width='22' height='22'><path d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/></svg>"
     };
 }
 
 @section Scripts {
     <script>
-        // --- Search filter ---
+        // ── Antiforgery token for AJAX ───────────────────────────────────────
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+        // ── Card navigation ──────────────────────────────────────────────────
+        function handleCardClick(e, url) {
+            if (e.target.closest('.stop-prop') || e.target.closest('.fav-btn')) return;
+            registerNavigation();
+            window.location = url;
+        }
+
+        // ── Toggle favorite (AJAX, no page reload) ───────────────────────────
+        async function toggleFavorite(e, btn, categoryId) {
+            e.stopPropagation();
+
+            const card = btn.closest('.wi-card');
+            const wasFav = card.dataset.favorited === '1';
+
+            // Optimistic UI update
+            setFavorited(card, btn, !wasFav);
+
+            try {
+                const res = await fetch('/Favorites/Toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    body: `categoryId=${categoryId}`
+                });
+
+                if (!res.ok) throw new Error('Server error');
+                const data = await res.json();
+
+                // Confirm with server's actual state
+                setFavorited(card, btn, data.isFavorited);
+
+            } catch {
+                // Revert on failure
+                setFavorited(card, btn, wasFav);
+            }
+        }
+
+        function setFavorited(card, btn, favorited) {
+            card.dataset.favorited = favorited ? '1' : '0';
+            card.classList.toggle('is-favorited', favorited);
+            btn.classList.toggle('is-favorited', favorited);
+            btn.title = favorited ? 'Unpin' : 'Pin to top';
+
+            // Swap star fill
+            const starSvg = btn.querySelector('svg');
+            if (starSvg) starSvg.setAttribute('fill', favorited ? 'currentColor' : 'none');
+
+            // Animate the star
+            btn.animate([
+                { transform: 'scale(1.4)', opacity: 0.7 },
+                { transform: 'scale(1)',   opacity: 1   }
+            ], { duration: 250, easing: 'ease-out' });
+        }
+
+        // ── Search filter ────────────────────────────────────────────────────
         const searchInput = document.getElementById('globalSearch');
         if (searchInput) {
             searchInput.addEventListener('input', function () {
@@ -440,8 +687,8 @@
                 const cards = document.querySelectorAll('.wi-card');
                 let visible = 0;
                 cards.forEach(card => {
-                    const title = card.dataset.title?.toLowerCase() ?? '';
-                    const desc  = card.dataset.desc?.toLowerCase() ?? '';
+                    const title = (card.dataset.title ?? '').toLowerCase();
+                    const desc  = (card.dataset.desc  ?? '').toLowerCase();
                     const match = !query || title.includes(query) || desc.includes(query);
                     card.style.display = match ? '' : 'none';
                     if (match) visible++;
@@ -450,20 +697,10 @@
             });
         }
 
-        // --- Add Category Modal ---
-        const addModal  = document.getElementById('addCategoryModal');
-
-        function openModal() {
-            addModal.classList.remove('hidden');
-            addModal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            document.getElementById('categoryNameInput').focus();
-        }
-        function closeModal() {
-            addModal.classList.add('hidden');
-            addModal.classList.remove('flex');
-            document.body.style.overflow = '';
-        }
+        // ── Add Category Modal ───────────────────────────────────────────────
+        const addModal = document.getElementById('addCategoryModal');
+        function openModal()  { addModal.classList.remove('hidden'); addModal.classList.add('flex'); document.body.style.overflow = 'hidden'; document.getElementById('categoryNameInput').focus(); }
+        function closeModal() { addModal.classList.add('hidden'); addModal.classList.remove('flex'); document.body.style.overflow = ''; }
 
         document.getElementById('addCategoryBtn').addEventListener('click', openModal);
         document.getElementById('closeModalBtn').addEventListener('click', closeModal);
@@ -471,7 +708,7 @@
         addModal.addEventListener('click', e => { if (e.target === addModal) closeModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-        // --- Icon picker ---
+        // ── Icon picker ──────────────────────────────────────────────────────
         document.querySelectorAll('.icon-option').forEach(opt => {
             opt.addEventListener('click', function () {
                 document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
@@ -480,23 +717,137 @@
             });
         });
 
-        // --- Stop delete forms from triggering card navigation ---
-        document.querySelectorAll('.stop-prop').forEach(el => {
-            el.addEventListener('click', e => e.stopPropagation());
-        });
-
-        // --- Confirm delete ---
+        // ── Delete form guards ───────────────────────────────────────────────
+        document.querySelectorAll('.stop-prop').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
         document.querySelectorAll('.delete-form').forEach(form => {
-            form.addEventListener('submit', e => {
-                if (!confirm('Delete this category and all its documents?')) e.preventDefault();
+            form.addEventListener('submit', e => { if (!confirm('Delete this category and all its documents?')) e.preventDefault(); });
+        });
+
+        // ── Animated Sort (FLIP) ─────────────────────────────────────────────
+        let activeSort = 'default';
+        const grid     = document.getElementById('cardsGrid');
+        const addBtn   = document.getElementById('addCategoryBtn');
+
+        function getCards() {
+            return Array.from(grid.querySelectorAll('.wi-card.category-card'));
+        }
+
+        // Stamp original index on load
+        getCards().forEach((card, i) => { card.dataset.index = i; });
+
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const method = this.dataset.sort;
+                const next   = (activeSort === method && method !== 'default') ? 'default' : method;
+                activeSort   = next;
+
+                document.querySelectorAll('.sort-btn').forEach(b =>
+                    b.classList.toggle('active', b.dataset.sort === next));
+
+                flipSort(next);
             });
         });
 
-        // Inside your existing cards script
-        document.querySelectorAll('.wi-card').forEach(card => {
-            card.addEventListener('click', function () {
-                registerNavigation();
+        function flipSort(method) {
+            const cards  = getCards();
+            const first  = cards.map(c => c.getBoundingClientRect());
+            const sorted = [...cards];
+
+            if (method === 'alpha') {
+                sorted.sort((a, b) => (a.dataset.name ?? '').localeCompare(b.dataset.name ?? ''));
+            } else if (method === 'alpha-desc') {
+                sorted.sort((a, b) => (b.dataset.name ?? '').localeCompare(a.dataset.name ?? ''));
+            } else if (method === 'favorites') {
+                sorted.sort((a, b) => {
+                    const fa = a.dataset.favorited === '1' ? 0 : 1;
+                    const fb = b.dataset.favorited === '1' ? 0 : 1;
+                    return fa - fb || parseInt(a.dataset.index) - parseInt(b.dataset.index);
+                });
+            } else {
+                sorted.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+            }
+
+            sorted.forEach(card => grid.insertBefore(card, addBtn));
+
+            const last = sorted.map(c => c.getBoundingClientRect());
+
+            sorted.forEach((card, i) => {
+                const origIndex = cards.indexOf(card);
+                const dx = first[origIndex].left - last[i].left;
+                const dy = first[origIndex].top  - last[i].top;
+                if (dx === 0 && dy === 0) return;
+                card.animate([
+                    { transform: `translate(${dx}px, ${dy}px)`, opacity: 0.55 },
+                    { transform: 'translate(0,0)',               opacity: 1    }
+                ], { duration: 420, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' });
             });
-        });
+        }
+
+                // ── Typewriter ───────────────────────────────────────────────────
+        const words = ['INSTRUCTIONS'];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const el = document.getElementById('typewriter');
+
+        function type() {
+            const current = words[wordIndex];
+
+            if (isDeleting) {
+                el.textContent = current.substring(0, charIndex--);
+            } else {
+                el.textContent = current.substring(0, charIndex++);
+            }
+
+            // Add blinking cursor via textContent trick
+            let speed = isDeleting ? 60 : 100;
+
+            if (!isDeleting && charIndex === current.length + 1) {
+                // Finished typing — pause then delete
+                speed = 1800;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                // Finished deleting — move to next word
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+                speed = 400;
+            }
+
+            setTimeout(type, speed);
+        }
+
+        type();
+
+                // ── Side Typewriter ──────────────────────────────────────────────
+        const words2 = ['We Are IT', 'Code to Innovate', 'Code. Create. Connect.', 'Where technology meets excellence.'];
+        let wordIndex2 = 0;
+        let charIndex2 = 0;
+        let isDeleting2 = false;
+        const el2 = document.getElementById('typewriter2');
+
+        function type2() {
+            const current = words2[wordIndex2];
+
+            if (isDeleting2) {
+                el2.textContent = current.substring(0, charIndex2--);
+            } else {
+                el2.textContent = current.substring(0, charIndex2++);
+            }
+
+            let speed = isDeleting2 ? 45 : 80;
+
+            if (!isDeleting2 && charIndex2 === current.length + 1) {
+                speed = 2200;
+                isDeleting2 = true;
+            } else if (isDeleting2 && charIndex2 === 0) {
+                isDeleting2 = false;
+                wordIndex2 = (wordIndex2 + 1) % words2.length;
+                speed = 350;
+            }
+
+            setTimeout(type2, speed);
+        }
+
+        type2();
     </script>
 }

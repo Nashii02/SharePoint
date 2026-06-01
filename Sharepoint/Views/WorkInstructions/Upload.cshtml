@@ -21,7 +21,7 @@
 </style>
 
 <div class="min-h-screen bg-[#ECFFEC]">
-    <section class="bg-[#1C3667] text-white relative overflow-hidden" style="min-height: 237px;">
+    <section class="bg-[#1C3667] text-white relative overflow-hidden" style="min-height: 240px;">
 
         <img src="~/images/circuit.png"
              class="absolute inset-0 w-full h-full object-cover filter brightness-0 invert opacity-10"
@@ -47,14 +47,14 @@
             <div class="max-w-xl pl-20">
                 <h1 style="letter-spacing: -1px;" class="text-5xl font-bold leading-none">@categoryName.ToUpper()</h1>
             </div>
-            <div class="absolute bottom-10 space-y-3" style="left: 341px;">
-                <div class="flex gap-3">
+            <div class="absolute bottom-10 flex-gap-3 space-y-3 translate-y-1" style="left: 360px;">
+                <div class="flex gap-3 -translate-y-1">
                     @for (int i = 0; i < 5; i++)
                     {
                         <div class="w-2 h-2 bg-white rounded-full"></div>
                     }
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 translate-y-0">
                     @for (int i = 0; i < 5; i++)
                     {
                         <div class="w-2 h-2 bg-white rounded-full"></div>
@@ -216,8 +216,8 @@
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        <p class="text-sm font-semibold text-gray-400">No documents yet</p>
-                        <p class="text-xs text-gray-300 mt-1">Upload your first PDF using the form.</p>
+                        <p class="text-sm font-semibold text-gray-700">No documents yet</p>
+                        <p class="text-xs text-gray-700 mt-1">Upload your first PDF using the form.</p>
                     </div>
                 }
                 else

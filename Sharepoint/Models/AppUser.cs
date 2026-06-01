@@ -25,5 +25,8 @@ namespace Sharepoint.Models
         // Avatar stored as bytes in DB
         public byte[]? AvatarData { get; set; }
         public string? AvatarMimeType { get; set; } // "image/jpeg", "image/png", etc.
+
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
     }
 }

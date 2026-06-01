@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sharepoint.Data;
 using Sharepoint.Models;
+using Sharepoint.Services;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -130,7 +131,6 @@ namespace Sharepoint.Controllers
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(idClaim, out int userId)) return RedirectToAction("Login");
 
-            // Load fresh from DB every time — don't rely on cached claims for avatar state
             var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login");
 
@@ -274,6 +274,147 @@ namespace Sharepoint.Controllers
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction("WorkInstruction", "Home");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreUser(int id)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            user.IsActive = true;
+            await _db.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"'{user.Username}' has been restored.";
+            return RedirectToAction("ManageUsers");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult ToggleUserStatus(int id)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return Forbid(); 
+
+            user.IsActive = !user.IsActive;
+            _db.SaveChanges();
+
+            return RedirectToAction("ManageUsers");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public async Task<IActionResult> ManageUsers()
+        {
+            var users = await _db.Users
+                .OrderBy(u => u.Username)
+                .ToListAsync();
+            return View(users);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult DeleteUser(int id)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return Forbid();
+
+            _db.Users.Remove(user);
+            _db.SaveChanges();
+
+            return RedirectToAction("ManageUsers");
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            if (TempData["ResetEmailSent"] != null)
+                ViewBag.ResetEmailSent = TempData["ResetEmailSent"];
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string email, [FromServices] EmailService emailService)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["ErrorMessage"] = "Please enter your email address.";
+                return View();
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user != null)
+            {
+                user.PasswordResetToken = Guid.NewGuid().ToString("N");
+                user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+                await _db.SaveChangesAsync();
+
+                var resetLink = Url.Action("ResetPassword", "Account",
+                    new { token = user.PasswordResetToken },
+                    protocol: Request.Scheme);
+
+                await emailService.SendPasswordResetAsync(email, resetLink!);
+            }
+
+            TempData["ResetEmailSent"] = email;
+            return RedirectToAction("ForgotPassword");
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return RedirectToAction("ForgotPassword");
+
+            ViewBag.Token = token;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(string token, string password, string confirmPassword)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return RedirectToAction("ForgotPassword");
+
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+            {
+                TempData["ErrorMessage"] = "Password must be at least 6 characters.";
+                ViewBag.Token = token;
+                return View();
+            }
+
+            if (password != confirmPassword)
+            {
+                TempData["ErrorMessage"] = "Passwords do not match.";
+                ViewBag.Token = token;
+                return View();
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                u.PasswordResetToken == token &&
+                u.PasswordResetTokenExpiry > DateTime.UtcNow);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "This reset link is invalid or has expired.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            user.PasswordHash = HashPassword(password);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+            await _db.SaveChangesAsync();
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            TempData["SuccessMessage"] = "Your password has been reset. You can now sign in.";
+            return RedirectToAction("Login");
         }
     }
 }

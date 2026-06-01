@@ -25,6 +25,14 @@
     var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
     var breadcrumbs = new List<(string Label, string? Url)>();
 
+    bool hideSearch = currentController == "Account" &&
+                     (currentAction == "Login" ||
+                      currentAction == "Register" ||
+                      currentAction == "ForgotPassword" ||
+                      currentAction == "ResetPassword" ||
+                      currentAction == "Profile" ||
+                      currentAction == "Settings");
+
     if (currentController == "Home" && currentAction == "WorkInstruction")
     {
         breadcrumbs.Add(("Work Instructions", null));
@@ -61,12 +69,6 @@
             padding: 0;
             overflow-x: hidden;
             width: 100%;
-        }
-
-        #globalSearch,
-        #globalSearch + *,
-        .hidden.md\:flex {
-            display: none !important;
         }
 
         .dropdown-menu-item {
@@ -206,16 +208,21 @@
                     </div>
                 </nav>
 
-                <!-- SEARCH BAR -->
-                <div class="hidden md:flex items-center bg-[#1C3667] rounded-lg px-3 py-2 w-80">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#DDF0DD]"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input type="text" id="globalSearch" placeholder="Search..."
-                           class="w-full outline-none bg-[#1C3667] px-2 text-white placeholder-white/50" />
-                </div>
+
+                @if (!hideSearch)
+                {
+                    <!-- SEARCH BAR -->
+                    <div class="hidden md:flex items-center bg-[#1C3667] rounded-lg px-3 py-2 w-80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#DDF0DD]"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" id="globalSearch" placeholder="Search..."
+                               class="w-full outline-none bg-[#1C3667] px-2 text-white placeholder-white/50" />
+                    </div>
+                }
+               
             </div>
         </div>
     </header>
@@ -314,6 +321,18 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
                     Settings
                 </a>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a href="/Account/ManageUsers" class="dropdown-menu-item" style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#374151;text-decoration:none;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1C3667" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        Manage Users
+                    </a>
+                }
                 <hr style="border:none;border-top:1px solid #f3f4f6;margin:4px 0;" />
                 <form method="post" action="/Account/Logout" style="margin:0;">
                     @Html.AntiForgeryToken()
@@ -352,15 +371,15 @@
     </div>
 
 
-    <footer class="border-top footer text-muted relative overflow-hidden" style="background:#1C3667;">
+    <footer class="border-top footer text-muted relative overflow-hidden" style="min-height: 40px; background:#1C3667;">
         <!-- Circuit background -->
         <img src="~/images/circuit.png"
              class="absolute inset-0 w-full h-full filter brightness-0 invert opacity-10 pointer-events-none"
              style="z-index: 0; object-fit: cover; object-position: center top;" />
 
-        <a href="/Home/WorkInstruction" class="flex items-center gap-3 translate-x-5 relative" style="z-index: 1;">
-            <img src="~/images/ITLogo.png" width="35" height="35" />
-            <center><h1 class="text-sm font-bold text-white">IT SOLUTIONS</h1></center>
+        <a href="/Home/WorkInstruction" class="flex items-center gap-3 translate-x-5 translate-y-1 invert brightness-0" style="z-index: 1;">
+            <img src="~/images/IT.png" width="33" height="33" />
+            <center><h1 class="text-sm font-bold text-white">IT Department&copy; | Copyright 2022. Universal Leaf Philippines Inc, All rights reserved.</h1></center>
         </a>
     </footer>
 
