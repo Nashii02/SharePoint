@@ -3,6 +3,35 @@
     ViewData["Title"] = "Manage Users";
 }
 
+<style>
+    .active-pill {
+        background: #1C3667;
+        color: white;
+        border-color: #1C3667;
+    }
+
+        .active-pill:hover {
+            background: #162d57;
+            color: white !important;
+        }
+
+    body {
+        background-color: #edffed !important;
+    }
+
+    #userTable tbody tr.bg-white {
+        background-color: #ddf0dd !important;
+    }
+
+    #userTable tbody tr.bg-red-50 {
+        background-color: #fef2f2 !important;
+    }
+
+    #userTable tbody tr:hover {
+        background-color: #c8e6c8 !important;
+    }
+</style>
+
 <div class="max-w-5xl mx-auto px-6 py-10">
 
     <!-- Header -->
@@ -55,11 +84,11 @@
             All
         </button>
         <button onclick="filterStatus('active')" data-filter="active"
-                class="filter-pill px-4 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-500 hover:border-[#1C3667] hover:text-[#1C3667] transition-colors">
+                class="filter-pill px-4 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-500 hover:border-white hover:text-[#1C3667] transition-colors">
             Active
         </button>
         <button onclick="filterStatus('deactivated')" data-filter="deactivated"
-                class="filter-pill px-4 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-500 hover:border-[#1C3667] hover:text-[#1C3667] transition-colors">
+                class="filter-pill px-4 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-500 hover:border-white hover:text-[#1C3667] transition-colors">
             Deactivated
         </button>
     </div>
@@ -95,10 +124,9 @@
                         data-role="@(user.Role?.ToLower() ?? "")"
                         data-status="@(user.IsActive ? "active" : "deactivated")">
 
-                        <!-- Avatar + Username -->
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-[#DDF0DD] text-[#1C3667] text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                <div class="w-8 h-8 rounded-full bg-white text-[#1C3667] text-xs font-bold flex items-center justify-center flex-shrink-0">
                                     @(user.Username != null && user.Username.Length > 0 ? user.Username.Substring(0, 2).ToUpper() : "?")
                                 </div>
                                 <span class="font-medium text-gray-800">@user.Username</span>
@@ -155,22 +183,17 @@
                         <td class="px-5 py-3">
                             @if (user.Role != "Admin")
                             {
-                                <form method="post" asp-controller="Account" asp-action="DeleteUser">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit"
-                                            title="Delete user permanently"
-                                            onclick="return confirm('Permanently delete @user.Username? This cannot be undone.')"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="3 6 5 6 21 6" />
-                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                            <path d="M10 11v6M14 11v6" />
-                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="openDeleteModal(@user.Id, '@user.Username')"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                        <path d="M10 11v6M14 11v6" />
+                                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                    </svg>
+                                    Delete
+                                </button>
                             }
                             else
                             {
@@ -187,6 +210,72 @@
     <p id="rowCount" class="text-xs text-gray-400 mt-3 text-right"></p>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:18px; padding:36px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+
+        <!-- Icon + Title -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <div style="width:44px;height:44px;background:#fef2f2;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+            </div>
+            <div>
+                <h3 style="font-size:17px;font-weight:700;color:#1C3667;margin:0;">Delete User?</h3>
+                <p id="deleteModalSubtitle" style="font-size:12px;color:#6b7280;margin:2px 0 0 0;"></p>
+            </div>
+        </div>
+
+        <p style="font-size:13px;color:#6b7280;margin:0 0 20px 0;line-height:1.6;">
+            This action is <strong>permanent</strong> and cannot be undone. Please enter your admin password to confirm.
+        </p>
+
+        <!-- Password input -->
+        <div style="margin-bottom:8px;">
+            <label style="font-size:11px;font-weight:700;color:#1C3667;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:6px;">
+                Admin Password
+            </label>
+            <div style="position:relative;">
+                <input type="password" id="deleteAdminPassword" placeholder="Enter your password"
+                       style="width:100%;padding:11px 40px 11px 14px;font-size:14px;color:#1C3667;background:#f7fff7;border:1.5px solid #c8e6d4;border-radius:10px;outline:none;box-sizing:border-box;" />
+                <button type="button" onclick="toggleDeletePw()" tabindex="-1"
+                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#a0b8a8;display:flex;align-items:center;padding:0;">
+                    <svg id="deletePwEyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;pointer-events:none;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Error message -->
+        <p id="deletePasswordError" style="display:none;font-size:12px;color:#b91c1c;font-weight:600;margin-bottom:16px;"></p>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button type="button" onclick="closeDeleteModal()"
+                    style="flex:1;padding:11px;font-size:14px;font-weight:700;background:#f3f4f6;color:#374151;border:none;border-radius:10px;cursor:pointer;">
+                Cancel
+            </button>
+            <button type="button" onclick="submitDelete()"
+                    style="flex:1;padding:11px;font-size:14px;font-weight:700;background:#b91c1c;color:white;border:none;border-radius:10px;cursor:pointer;">
+                Delete User
+            </button>
+        </div>
+
+        <!-- Hidden form that actually submits -->
+        <form id="deleteForm" method="post" asp-controller="Account" asp-action="DeleteUser" style="display:none;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="deleteUserId" />
+            <input type="hidden" name="adminPassword" id="deletePasswordField" />
+        </form>
+    </div>
+</div>
+
 <style>
     .active-pill {
         background: #1C3667;
@@ -196,6 +285,7 @@
 </style>
 
 <script>
+    // ── Filters ──────────────────────────────────────────────
     const searchInput = document.getElementById('globalSearch');
     const rows = document.querySelectorAll('.user-row');
     const noResults = document.getElementById('noResults');
@@ -239,4 +329,71 @@
 
     searchInput.addEventListener('input', applyFilters);
     applyFilters();
+
+    // ── Delete Modal ──────────────────────────────────────────
+    function openDeleteModal(userId, username) {
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteModalSubtitle').textContent = `Deleting: ${username}`;
+        document.getElementById('deleteAdminPassword').value = '';
+        document.getElementById('deletePasswordError').style.display = 'none';
+        document.getElementById('deleteModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('deleteAdminPassword').focus(), 100);
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        document.getElementById('deleteAdminPassword').value = '';
+        document.getElementById('deletePasswordError').style.display = 'none';
+    }
+
+    function toggleDeletePw() {
+        const input = document.getElementById('deleteAdminPassword');
+        const icon = document.getElementById('deletePwEyeIcon');
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        icon.innerHTML = isHidden
+            ? `<line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>`
+            : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    }
+
+    async function submitDelete() {
+        const password = document.getElementById('deleteAdminPassword').value.trim();
+        const errorEl = document.getElementById('deletePasswordError');
+
+        if (!password) {
+            errorEl.textContent = 'Please enter your password.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Verify password via a small fetch call before submitting the real form
+        const verifyResponse = await fetch('/Account/VerifyAdminPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('#deleteForm [name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ password })
+        });
+
+        if (!verifyResponse.ok) {
+            errorEl.textContent = 'Incorrect password. Please try again.';
+            errorEl.style.display = 'block';
+            document.getElementById('deleteAdminPassword').value = '';
+            document.getElementById('deleteAdminPassword').focus();
+            return;
+        }
+
+        // Password verified — submit the real delete form
+        errorEl.style.display = 'none';
+        document.getElementById('deletePasswordField').value = password;
+        document.getElementById('deleteForm').submit();
+    }
+
+    // Allow Enter key to confirm
+    document.getElementById('deleteAdminPassword').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') submitDelete();
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('deleteModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDeleteModal();
+    });
 </script>

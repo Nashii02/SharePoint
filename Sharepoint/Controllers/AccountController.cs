@@ -314,19 +314,6 @@ namespace Sharepoint.Controllers
             return View(users);
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public IActionResult DeleteUser(int id)
-        {
-            var user = _db.Users.FirstOrDefault(u => u.Id == id);
-            if (user == null) return NotFound();
-            if (user.Role == "Admin") return Forbid();
-
-            _db.Users.Remove(user);
-            _db.SaveChanges();
-
-            return RedirectToAction("ManageUsers");
-        }
 
         [HttpGet]
         public IActionResult ForgotPassword()
@@ -416,5 +403,49 @@ namespace Sharepoint.Controllers
             TempData["SuccessMessage"] = "Your password has been reset. You can now sign in.";
             return RedirectToAction("Login");
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult VerifyAdminPassword([FromBody] VerifyPasswordRequest request)
+        {
+            var username = User.Identity?.Name;
+            var admin = _db.Users.FirstOrDefault(u => u.Username == username);
+            if (admin == null) return Unauthorized();
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hash = Convert.ToBase64String(
+                sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password)));
+
+            return hash == admin.PasswordHash ? Ok() : Unauthorized();
+        }
+
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult DeleteUser(int id, string adminPassword)
+        {
+            var username = User.Identity?.Name;
+            var admin = _db.Users.FirstOrDefault(u => u.Username == username);
+            if (admin == null) return Unauthorized();
+
+            if (!VerifyPassword(adminPassword, admin.PasswordHash))
+                return Unauthorized();
+
+            var user = _db.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return Forbid();
+
+            _db.Users.Remove(user);
+            _db.SaveChanges();
+
+            return RedirectToAction("ManageUsers");
+        }
+
+        public class VerifyPasswordRequest
+        {
+            public string Password { get; set; } = "";
+        }
+
     }
 }
