@@ -1,8 +1,9 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Sharepoint.Data;
 using Sharepoint.Models;
-using Microsoft.AspNetCore.Authorization;
+using System.Diagnostics;
 
 
 namespace Sharepoint.Controllers
@@ -12,12 +13,13 @@ namespace Sharepoint.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly AppDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-
-        public HomeController(ILogger<HomeController> logger, AppDbContext context)
+        public HomeController(ILogger<HomeController> logger, AppDbContext context, UserManager<IdentityUser> userManager)
         {
             _logger = logger;
             _context = context;
+            _userManager = userManager;
         }
 
         [AllowAnonymous]
@@ -119,30 +121,110 @@ namespace Sharepoint.Controllers
         }
 
 
-
-        [AllowAnonymous]
         // MODULE PAGE — shows files for a specific module
+        // VIEW COUNT — increment on every module page load including guests
+        [AllowAnonymous]
         public IActionResult Module(string id)
         {
             var module = _context.Modules.FirstOrDefault(m => m.Slug == id);
+            if (module != null)
+            {
+                module.ViewCount++;
+                _context.SaveChanges();
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
 
             var model = new ModulePageViewModel
             {
                 ModuleTitle = module?.Title ?? "Module",
-                ModuleSubtitle = module?.Subtitle ?? "Work instruction module",
-                ModuleSlug = id ?? "",    // ← this must be set
-
+                ModuleSubtitle = module?.Subtitle ?? "",
+                ModuleSlug = id ?? "",
+                ViewCount = module?.ViewCount ?? 0,
+                LikeCount = _context.ModuleReactions.Count(r => r.ModuleSlug == id),
+                IsLikedByMe = currentUserId != null &&
+                                 _context.ModuleReactions.Any(r => r.ModuleSlug == id && r.UserId == currentUserId),
+                Comments = _context.ModuleComments
+                                    .Where(c => c.ModuleSlug == id && !c.IsDeleted)
+                                    .OrderByDescending(c => c.CreatedAt)
+                                    .ToList(),
                 Files = _context.ModuleFiles
-                            .Where(f => f.ModuleSlug == id && !f.IsDeleted)
-                            .ToList(),
-
+                                    .Where(f => f.ModuleSlug == id && !f.IsDeleted)
+                                    .ToList(),
                 DeletedFiles = _context.ModuleFiles
-                            .Where(f => f.ModuleSlug == id && f.IsDeleted)
-                            .OrderByDescending(f => f.DeletedAt)
-                            .ToList()
+                                    .Where(f => f.ModuleSlug == id && f.IsDeleted)
+                                    .OrderByDescending(f => f.DeletedAt)
+                                    .ToList()
             };
 
             return View("Module", model);
+        }
+
+        // LIKE / UNLIKE TOGGLE
+        [Authorize]
+        [HttpPost]
+        public IActionResult ToggleLike(string moduleId)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (userId == null) return Unauthorized();
+
+            var existing = _context.ModuleReactions
+                .FirstOrDefault(r => r.ModuleSlug == moduleId && r.UserId == userId);
+
+            if (existing != null)
+                _context.ModuleReactions.Remove(existing);
+            else
+                _context.ModuleReactions.Add(new ModuleReaction
+                {
+                    ModuleSlug = moduleId,
+                    UserId = userId,
+                    CreatedAt = DateTime.Now
+                });
+
+            _context.SaveChanges();
+
+            var count = _context.ModuleReactions.Count(r => r.ModuleSlug == moduleId);
+            return Json(new { liked = existing == null, count });
+        }
+
+        // ADD COMMENT
+        [Authorize]
+        [HttpPost]
+        public IActionResult AddComment(string moduleId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content) || string.IsNullOrEmpty(moduleId))
+                return RedirectToAction("Module", new { id = moduleId });
+
+            var user = _userManager.GetUserAsync(User).Result;
+
+            _context.ModuleComments.Add(new ModuleComment
+            {
+                ModuleSlug = moduleId,
+                UserId = user?.Id ?? "",
+                UserEmail = user?.Email ?? "Unknown",
+                Content = content.Trim()[..Math.Min(content.Trim().Length, 500)],
+                CreatedAt = DateTime.Now
+            });
+
+            _context.SaveChanges();
+            return RedirectToAction("Module", new { id = moduleId });
+        }
+
+        // DELETE COMMENT — admin or comment owner
+        [Authorize]
+        [HttpPost]
+        public IActionResult DeleteComment(int commentId, string moduleId)
+        {
+            var userId = _userManager.GetUserId(User);
+            var comment = _context.ModuleComments.FirstOrDefault(c => c.Id == commentId);
+
+            if (comment != null && (User.IsInRole("Admin") || comment.UserId == userId))
+            {
+                comment.IsDeleted = true;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Module", new { id = moduleId });
         }
 
 

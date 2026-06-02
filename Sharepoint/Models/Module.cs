@@ -15,6 +15,7 @@
         public string? Category { get; set; }
         public string? CategoryColor { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public int ViewCount { get; set; } = 0;
     }
 
     public class ModuleFile
@@ -45,5 +46,31 @@
         public List<ModuleFile> Files { get; set; } = new();
         public List<ModuleFile> DeletedFiles { get; set; } = new();
 
+        // ... existing properties
+        public int ViewCount { get; set; }
+        public int LikeCount { get; set; }
+        public bool IsLikedByMe { get; set; }
+        public List<ModuleComment> Comments { get; set; } = new();
+        
+
+    }
+
+    public class ModuleReaction
+    {
+        public int Id { get; set; }
+        public string ModuleSlug { get; set; } = "";
+        public string UserId { get; set; } = "";  // identity user id
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ModuleComment
+    {
+        public int Id { get; set; }
+        public string ModuleSlug { get; set; } = "";
+        public string UserId { get; set; } = "";
+        public string UserEmail { get; set; } = "";
+        public string Content { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }

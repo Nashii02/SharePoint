@@ -11,5 +11,7 @@ namespace Sharepoint.Data
 
         public DbSet<Module> Modules { get; set; }
         public DbSet<ModuleFile> ModuleFiles { get; set; }
+        public DbSet<ModuleReaction> ModuleReactions { get; set; }
+        public DbSet<ModuleComment> ModuleComments { get; set; }
     }
 }
