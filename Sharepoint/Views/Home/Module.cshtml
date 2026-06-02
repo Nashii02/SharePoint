@@ -176,7 +176,7 @@
     <!-- BODY -->
     <div class="flex-1 py-7">
         <div class="max-w-7xl mx-auto px-8">
-            <div class="@(User.IsInRole("Admin") || User.IsInRole("User") ? "flex gap-6 items-start" : "")">
+            <div class="@(User.IsInRole("Admin") ? "flex gap-6 items-start" : "")">
 
                 <!-- LEFT: FILE LIST -->
                 <div class="flex-1 bg-white rounded-xl card shadow-sm overflow-hidden flex flex-col">
@@ -403,7 +403,7 @@
                 <!-- RIGHT: UPLOAD + TRASH -->
                 <div class="w-72 flex-shrink-0 flex flex-col gap-4 sticky top-7 self-start">
 
-                    @if (User.IsInRole("Admin") || User.IsInRole("User"))
+                    @if (User.IsInRole("Admin"))
                     {
                         <!-- Upload card -->
                         <form method="post" action="/Home/UploadFile" enctype="multipart/form-data">

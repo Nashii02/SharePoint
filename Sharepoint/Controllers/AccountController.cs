@@ -72,7 +72,11 @@ namespace Sharepoint.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            if (!ModelState.IsValid) return View("Login", new LoginViewModel());
+            if (!ModelState.IsValid)
+            {
+                ViewData["ShowRegister"] = true;
+                return View("Login", new LoginViewModel { RegisterModel = model });
+            }
 
             var user = new IdentityUser
             {
@@ -98,7 +102,8 @@ namespace Sharepoint.Controllers
             foreach (var error in result.Errors)
                 ModelState.AddModelError("", error.Description);
 
-            return View("Login", new LoginViewModel());
+            ViewData["ShowRegister"] = true;
+            return View("Login", new LoginViewModel { RegisterModel = model });
         }
 
         // USER MANAGEMENT PAGE — Admin only

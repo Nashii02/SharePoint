@@ -11,5 +11,7 @@ namespace Sharepoint.Models
         public string Password { get; set; } = "";
 
         public bool RememberMe { get; set; }
+
+        public RegisterViewModel? RegisterModel { get; set; }
     }
 }

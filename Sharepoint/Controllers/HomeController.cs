@@ -148,7 +148,7 @@ namespace Sharepoint.Controllers
 
 
 
-        [Authorize(Roles = "Admin, User")]
+        [Authorize(Roles = "Admin")]
         // UPLOAD FILE — saves file to folder and records it in DB
         [HttpPost]
         public IActionResult UploadFile(IFormFile file, string moduleId, string description)
@@ -267,7 +267,7 @@ namespace Sharepoint.Controllers
 
 
 
-        [Authorize(Roles = "Admin, User")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult DeleteFile(int fileId, string moduleId)
         {

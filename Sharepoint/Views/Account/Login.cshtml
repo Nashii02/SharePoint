@@ -1,7 +1,9 @@
 ﻿@model LoginViewModel
 @{
-    Layout = null;
+    var showRegister = ViewData["ShowRegister"] as bool? == true;
 }
+
+
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -214,4 +216,10 @@
             ? 'fa-solid fa-eye text-xs'
             : 'fa-solid fa-eye-slash text-xs';
     }
+
+        document.addEventListener('DOMContentLoaded', function () {
+        if (startOnRegister) showTab('register');
+    });
+
+    var startOnRegister = @showRegister.ToString().ToLower();
 </script>
