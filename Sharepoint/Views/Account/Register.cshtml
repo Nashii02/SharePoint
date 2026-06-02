@@ -1,4 +1,4 @@
-﻿@model LoginViewModel
+@model RegisterViewModel
 @{
     Layout = null;
 }
@@ -26,12 +26,6 @@
 <div class="min-h-screen flex">
     <!-- LEFT SIDE - Navy Blue with Dots -->
     <div class="hidden md:flex md:w-1/2 bg-[#1B2A6B] dot-pattern flex-col p-8 relative overflow-hidden">
-        
-        <div class="absolute right-20 pointer-events-none hidden md:block">
-            <img src="~/images/NoBGLogo.png"
-                 class="w-100 h-100 object-contain filter brightness-0 invert opacity-[0.07] translate-y-8" />
-        </div>
-
         <!-- Back button with logo -->
         <a href="/Home/WorkInstruction"
            class="flex items-center gap-3 w-fit group">
@@ -47,11 +41,9 @@
         <!-- Branding section at bottom -->
         <div class="mt-auto">
             <div class="flex items-center gap-3 mb-5">
-                <div class="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center">
-                        <img src="~/images/NoBGLogo.png"
-                             class="w-8 h-8 object-contain filter brightness-0 invert"
-                             alt="Logo" />
-                    </div>
+                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-white text-xl"></i>
+                </div>
                 <div>
                     <p class="text-[11px] font-semibold text-blue-200 uppercase tracking-widest">IT Solutions</p>
                     <p class="text-base font-bold text-white">Work Instructions</p>
@@ -80,8 +72,8 @@
                 <div class="bg-[#1B2A6B] px-8 py-7 text-white relative overflow-hidden">
                     <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.06]" style="background:white;"></div>
                     <div class="relative z-10">
-                        <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
-                        <p class="text-blue-200/70 text-xs mt-1">Sign in to your account</p>
+                        <h1 class="text-2xl font-bold tracking-tight">Create Account</h1>
+                        <p class="text-blue-200/70 text-xs mt-1">Join our platform</p>
                     </div>
                 </div>
 
@@ -101,8 +93,8 @@
                         </div>
                     }
 
-                    <!-- LOGIN FORM -->
-                    <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                    <!-- REGISTER FORM -->
+                    <form method="post" asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">
                         @Html.AntiForgeryToken()
 
                         <div class="mb-4">
@@ -112,43 +104,62 @@
                                 <input asp-for="Email" type="email" placeholder="you@company.com"
                                        class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
                             </div>
+                            <span asp-validation-for="Email" class="text-xs text-red-500 mt-1 block"></span>
                         </div>
 
-                        <div class="mb-5">
+                        <div class="mb-4">
                             <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Password</label>
                             <div class="relative">
                                 <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
-                                <input asp-for="Password" type="password" id="login-password"
+                                <input asp-for="Password" type="password" id="reg-password"
                                        placeholder="••••••••"
                                        class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
-                                <button type="button" onclick="togglePassword('login-password', 'eye-login')"
+                                <button type="button" onclick="togglePassword('reg-password', 'eye-reg')"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
-                                    <i id="eye-login" class="fa-solid fa-eye text-xs"></i>
+                                    <i id="eye-reg" class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
+                            <span asp-validation-for="Password" class="text-xs text-red-500 mt-1 block"></span>
                         </div>
 
                         <div class="mb-5">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input asp-for="RememberMe" type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1B2A6B]" />
-                                <span class="text-xs text-gray-500">Remember me</span>
-                            </label>
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Confirm Password</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input asp-for="ConfirmPassword" type="password" id="reg-confirm"
+                                       placeholder="••••••••"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                                <button type="button" onclick="togglePassword('reg-confirm', 'eye-confirm')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
+                                    <i id="eye-confirm" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-xs text-red-500 mt-1 block"></span>
+                        </div>
+
+                        <!-- Role note -->
+                        <div class="mb-5 rounded-lg px-3 py-2.5 flex items-start gap-2"
+                             style="background:#F5F6FA; border:1px solid #E8EAF0;">
+                            <i class="fa-solid fa-circle-info text-[#1B2A6B]/40 text-xs flex-shrink-0 mt-0.5"></i>
+                            <p class="text-[10px] text-gray-400 leading-relaxed">
+                                New accounts are created as <span class="font-semibold text-[#1B2A6B]">User</span> by default. An admin can change your role later.
+                            </p>
                         </div>
 
                         <button type="submit"
                                 class="w-full bg-[#1B2A6B] hover:bg-[#152255] text-white text-sm font-semibold py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
-                            Sign in
+                            <i class="fa-solid fa-user-plus text-xs"></i>
+                            Create Account
                         </button>
                     </form>
 
-                    <!-- Create Account Link -->
+                    <!-- Sign In Link -->
                     <div class="mt-6 pt-6 flex items-center justify-center" style="border-top: 1px solid #F0F1F5;">
                         <p class="text-xs text-gray-500">
-                            Don't have an account?
-                            <a href="/Account/Register"
+                            Already have an account?
+                            <a href="/Account/Login"
                                class="font-semibold text-[#1B2A6B] hover:text-[#152255] transition">
-                                Create one here
+                                Sign in here
                             </a>
                         </p>
                     </div>

@@ -67,6 +67,15 @@ namespace Sharepoint.Controllers
             return RedirectToAction("WorkInstruction", "Home");
         }
 
+        [HttpGet]
+        public IActionResult Register(string? returnUrl = null)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Login", "Account");
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
         {
@@ -74,8 +83,7 @@ namespace Sharepoint.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewData["ShowRegister"] = true;
-                return View("Login", new LoginViewModel { RegisterModel = model });
+                return View(model);
             }
 
             var user = new IdentityUser
@@ -102,8 +110,7 @@ namespace Sharepoint.Controllers
             foreach (var error in result.Errors)
                 ModelState.AddModelError("", error.Description);
 
-            ViewData["ShowRegister"] = true;
-            return View("Login", new LoginViewModel { RegisterModel = model });
+            return View(model);
         }
 
         // USER MANAGEMENT PAGE — Admin only

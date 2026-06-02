@@ -136,8 +136,12 @@
                     <h1 class="text-4xl font-bold tracking-tight leading-none">
                         @Model.ModuleTitle.ToUpper()
                     </h1>
-                    <p class="text-blue-200/80 text-sm mt-2">@Model.ModuleSubtitle</p>
+
+                    <p class="text-blue-200/80 text-sm mt-2">
+                        @Model.ModuleSubtitle
+                    </p>
                 </div>
+
 
                 <!-- Module stat pills — in the hero -->
                 <div class="flex items-center gap-3 pb-1 flex-wrap">
@@ -172,7 +176,8 @@
                 </div>
 
                 <!-- ENGAGEMENT BAR -->
-                <div class="flex items-center gap-4 mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.08);">
+                <div class="flex items-center gap-4 mt-4 pt-4" 
+                     style="border-top: 1px solid rgba(255,255,255,0.08);">
 
                     <!-- View count -->
                     <div class="flex items-center gap-1.5 text-blue-200/60 text-xs">
@@ -217,10 +222,10 @@
               <div class="flex-1 flex flex-col gap-6">
 
                 <!-- LEFT: FILE LIST -->
-                <div class="flex-1 bg-white rounded-xl card shadow-sm overflow-hidden flex flex-col">
+                <div class="bg-white rounded-xl card shadow-sm flex flex-col" style="overflow: hidden; height: 600px;">
 
                     <!-- Panel header -->
-                    <div class="px-5 py-3.5 flex items-center justify-between"
+                    <div class="px-5 py-3.5 flex items-center justify-between flex-shrink-0"
                          style="border-bottom: 1px solid #F0F1F5; border-top: 3px solid #1B2A6B;">
 
                         <div class="flex items-center gap-2">
@@ -252,16 +257,18 @@
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto" style="min-height: 0;">
+                    <div class="overflow-y-auto" style="flex: 1; min-height: 0; overflow-x: hidden;">
 
                     @if (Model.Files.Any())
                         {
                             var fileGroups = Model.Files
+                                .OrderByDescending(f => f.UploadedDate)
                                 .GroupBy(f => f.OriginalFileName ?? f.FileName)
                                 .Select(g => new {
                                     Latest  = g.OrderByDescending(f => f.Version).First(),
                                     History = g.OrderByDescending(f => f.Version).Skip(1).ToList()
-                                }).ToList();
+                                })
+                                .ToList();
 
                             <div id="no-files-found" style="display:none;"
                                  class="px-5 py-10 text-center text-gray-400 text-sm">
@@ -645,6 +652,18 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <!-- Open in New Tab button -->
+                <a id="preview-newtab"
+                   href="#"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition"
+                   style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);"
+                   title="Open in new tab">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    Open
+                </a>
+
                 <!-- Download button -->
                 <a id="preview-download"
                    href="#"
@@ -700,12 +719,15 @@
         const moduleId     = parts[1];
         const name         = parts.slice(2).join('/');
         const downloadUrl  = `/Home/DownloadFile?moduleId=${encodeURIComponent(moduleId)}&fileName=${encodeURIComponent(name)}`;
+        const previewUrl   = `/Home/PreviewFile?moduleId=${encodeURIComponent(moduleId)}&fileName=${encodeURIComponent(name)}`;
 
         document.getElementById('preview-download').href = downloadUrl;
+        document.getElementById('preview-newtab').href = previewUrl;
 
         const frame    = document.getElementById('preview-frame');
         const fallback = document.getElementById('preview-fallback');
         const modal    = document.getElementById('preview-modal');
+        const newTabBtn = document.getElementById('preview-newtab');
 
         frame.style.display    = 'none';
         fallback.style.display = 'none';
@@ -716,13 +738,16 @@
 
         if (downloadOnly.includes(type)) {
             document.getElementById('fallback-download').href = downloadUrl;
+            newTabBtn.style.display = 'none';
             fallback.style.display = 'flex';
         } else {
             if (!moduleId || !name) {
                 document.getElementById('fallback-download').href = downloadUrl;
+                newTabBtn.style.display = 'none';
                 fallback.style.display = 'flex';
             } else {
-                frame.src = `/Home/PreviewFile?moduleId=${encodeURIComponent(moduleId)}&fileName=${encodeURIComponent(name)}`;
+                newTabBtn.style.display = 'flex';
+                frame.src = previewUrl;
                 frame.style.display = 'block';
             }
         }
