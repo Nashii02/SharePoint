@@ -1,4 +1,6 @@
 ﻿@model WorkInstructionViewModel
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
 
 @{
     ViewData["Title"] = "Work Instructions";
@@ -174,22 +176,105 @@
                                style="outline:none;" />
                     </div>
 
-                    <!-- Add Module -->
-                    <button type="button" onclick="openAddModal()"
-                            class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
-                            style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
-                        <i class="fa-solid fa-plus text-[10px]"></i>
-                        Add Module
-                    </button>
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        <div class="flex items-center gap-1.5 text-xs text-white/50">
+                            <i class="fa-solid fa-user text-[10px]"></i>
+                            <span>@User.Identity?.Name</span>
+                        </div>
+                        <form method="post" asp-controller="Account" asp-action="Logout" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit"
+                                    class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                                    style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
+                                <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+                                Sign out
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login?returnUrl=/Home/WorkInstruction"
+                           class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                           style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
+                            Sign in
+                        </a>
+                    }
+                    
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <div class="relative" id="admin-dropdown-wrapper">
+                                <button type="button"
+                                        onclick="toggleAdminDropdown()"
+                                        id="admin-dropdown-btn"
+                                        class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                                        style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                                    <i class="fa-solid fa-shield-halved text-[10px]"></i>
+                                    Admin
+                                    <i class="fa-solid fa-chevron-down text-[8px] ml-0.5" id="admin-chevron"></i>
+                                </button>
 
-                    <!-- Edit Module -->
-                    <button type="button" onclick="toggleEditMode()"
-                            id="edit-mode-btn"
-                            class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
-                            style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
-                        <i class="fa-solid fa-pen text-[10px]"></i>
-                        Edit Module
-                    </button>
+                                <div id="admin-dropdown"
+                                     style="display:none; position:absolute; top:calc(100% + 8px); right:0; width:200px; background:#fff; border:1px solid #E8EAF0; border-radius:12px; box-shadow:0 8px 24px rgba(27,42,107,0.12); z-index:9999; overflow:hidden;">
+
+                                    <!-- Section: Content -->
+                                    <div style="padding: 6px;">
+                                        <p style="font-size:9px; font-weight:700; color:#9CA3AF; letter-spacing:0.08em; text-transform:uppercase; padding: 6px 10px 4px;">Content</p>
+
+                                        <button type="button" onclick="openAddModal(); closeAdminDropdown();"
+                                                style="width:100%; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; border:none; background:transparent; cursor:pointer; text-align:left;"
+                                                onmouseover="this.style.background='#F5F7FF'" onmouseout="this.style.background='transparent'">
+                                            <div style="width:28px; height:28px; border-radius:7px; background:#EEF2FF; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                <i class="fa-solid fa-plus" style="color:#1B2A6B; font-size:11px;"></i>
+                                            </div>
+                                            <div>
+                                                <p style="font-size:12px; font-weight:600; color:#1B2A6B; margin:0; line-height:1.2;">Add Module</p>
+                                                <p style="font-size:10px; color:#9CA3AF; margin:0; line-height:1.4;">Create a new work instruction</p>
+                                            </div>
+                                        </button>
+
+                                        <button type="button" onclick="toggleEditMode(); closeAdminDropdown();"
+                                                style="width:100%; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; border:none; background:transparent; cursor:pointer; text-align:left;"
+                                                onmouseover="this.style.background='#F5F7FF'" onmouseout="this.style.background='transparent'">
+                                            <div style="width:28px; height:28px; border-radius:7px; background:#FFFBEB; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                <i class="fa-solid fa-pen" style="color:#D97706; font-size:11px;"></i>
+                                            </div>
+                                            <div>
+                                                <p style="font-size:12px; font-weight:600; color:#1B2A6B; margin:0; line-height:1.2;">Edit Module</p>
+                                                <p style="font-size:10px; color:#9CA3AF; margin:0; line-height:1.4;">Click a card to edit it</p>
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    <!-- Divider -->
+                                    <div style="height:1px; background:#F0F1F5; margin:0 6px;"></div>
+
+                                    <!-- Section: Users -->
+                                    <div style="padding: 6px;">
+                                        <p style="font-size:9px; font-weight:700; color:#9CA3AF; letter-spacing:0.08em; text-transform:uppercase; padding: 6px 10px 4px;">Users</p>
+
+                                        <a href="/Account/ManageUsers"
+                                           style="width:100%; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; text-decoration:none;"
+                                           onmouseover="this.style.background='#F5F7FF'" onmouseout="this.style.background='transparent'">
+                                            <div style="width:28px; height:28px; border-radius:7px; background:#F0FDF4; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                <i class="fa-solid fa-users-gear" style="color:#16A34A; font-size:11px;"></i>
+                                            </div>
+                                            <div>
+                                                <p style="font-size:12px; font-weight:600; color:#1B2A6B; margin:0; line-height:1.2;">Manage Users</p>
+                                                <p style="font-size:10px; color:#9CA3AF; margin:0; line-height:1.4;">Roles, access & accounts</p>
+                                            </div>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+                        
+
+                    
+
+                    
                 </div>
             </div>
 
@@ -408,6 +493,33 @@
                 <p class="text-sm font-semibold text-gray-500">No modules found</p>
                 <p class="text-xs text-gray-400 mt-1">Try a different search term</p>
             </div>
+            @if (!Model.GroupedSecondaryCards.Any())
+            {
+                <div class="flex flex-col items-center justify-center py-24 text-center">
+                    <div class="w-20 h-20 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mx-auto mb-5">
+                        <i class="fa-solid fa-box-open text-[#1B2A6B] text-3xl"></i>
+                    </div>
+                    <p class="text-base font-bold text-[#1B2A6B] mb-1">No modules yet</p>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <p class="text-xs text-gray-400 max-w-xs leading-relaxed mb-5">
+                            Get started by adding your first work instruction module.
+                        </p>
+                        <button type="button" onclick="openAddModal()"
+                                class="flex items-center gap-2 bg-[#1B2A6B] hover:bg-[#152255] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            Add your first module
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+                            No work instruction modules have been added yet. Check back later.
+                        </p>
+                    }
+                </div>
+            }
 
         </div>
     </div>
@@ -890,26 +1002,15 @@
         /* ─── EDIT MODE ─── */
     let editModeActive = false;
 
-    function toggleEditMode() {
+        function toggleEditMode() {
         editModeActive = !editModeActive;
-        const btn = document.getElementById('edit-mode-btn');
 
         if (editModeActive) {
-            btn.style.background = 'rgba(251,191,36,0.25)';
-            btn.style.border     = '1px solid rgba(251,191,36,0.5)';
-            btn.style.color      = '#fbbf24';
-            btn.innerHTML        = '<i class="fa-solid fa-pen text-[10px]"></i> Edit Mode <span class="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse"></span>';
-
             document.querySelectorAll('.module-card').forEach(card => {
                 card.style.borderLeftColor = '#f59e0b';
                 card.querySelectorAll('.edit-indicator').forEach(el => el.classList.replace('hidden', 'flex'));
             });
         } else {
-            btn.style.background = 'rgba(255,255,255,0.12)';
-            btn.style.border     = '1px solid rgba(255,255,255,0.15)';
-            btn.style.color      = '';
-            btn.innerHTML        = '<i class="fa-solid fa-pen text-[10px]"></i> Edit Mode';
-
             document.querySelectorAll('.module-card').forEach(card => {
                 card.style.borderLeftColor = 'transparent';
                 card.querySelectorAll('.edit-indicator').forEach(el => el.classList.replace('flex', 'hidden'));
@@ -966,4 +1067,24 @@
             document.getElementById('delete-module-form').submit();
         }
     }
+
+    function toggleAdminDropdown() {
+        const dropdown = document.getElementById('admin-dropdown');
+        const chevron  = document.getElementById('admin-chevron');
+        const isOpen   = dropdown.style.display === 'block';
+
+        dropdown.style.display = isOpen ? 'none' : 'block';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        chevron.style.transition = 'transform 0.15s';
+    }
+
+    function closeAdminDropdown() {
+        document.getElementById('admin-dropdown').style.display = 'none';
+        document.getElementById('admin-chevron').style.transform = '';
+    }
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('admin-dropdown-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) closeAdminDropdown();
+    });
 </script>

@@ -2,14 +2,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Sharepoint.Data;
 using Sharepoint.Models;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace Sharepoint.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
         private readonly AppDbContext _context;
+
 
         public HomeController(ILogger<HomeController> logger, AppDbContext context)
         {
@@ -17,6 +20,7 @@ namespace Sharepoint.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return RedirectToAction("WorkInstruction");
@@ -25,7 +29,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [AllowAnonymous]
         // shows all module cards
         public IActionResult WorkInstruction()
         {
@@ -116,7 +120,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [AllowAnonymous]
         // MODULE PAGE — shows files for a specific module
         public IActionResult Module(string id)
         {
@@ -144,7 +148,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [Authorize(Roles = "Admin, User")]
         // UPLOAD FILE — saves file to folder and records it in DB
         [HttpPost]
         public IActionResult UploadFile(IFormFile file, string moduleId, string description)
@@ -221,7 +225,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [AllowAnonymous]
         // PREVIEW FILE — serves file directly or converts Office files to PDF
         public IActionResult PreviewFile(string moduleId, string fileName)
         {
@@ -263,13 +267,53 @@ namespace Sharepoint.Controllers
 
 
 
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost]
+        public IActionResult DeleteFile(int fileId, string moduleId)
+        {
+            if (string.IsNullOrEmpty(moduleId))
+                return BadRequest("Module ID is missing.");
+
+            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
+            if (file != null)
+            {
+                file.IsDeleted = true;
+                file.DeletedAt = DateTime.Now;
+                file.DeletedBy = "Current User";
+                _context.SaveChanges();
+            }
+            return RedirectToAction("Module", new { id = moduleId });
+        }
 
 
-       
+
+
+
+        [Authorize(Roles = "Admin, User")]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult DownloadFile(string moduleId, string fileName)
+        {
+            if (string.IsNullOrEmpty(moduleId) || string.IsNullOrEmpty(fileName))
+                return BadRequest("Invalid file.");
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", moduleId);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var bytes = System.IO.File.ReadAllBytes(filePath);
+            var contentType = "application/octet-stream"; // forces download
+            return File(bytes, contentType, fileName);
+        }
 
 
 
 
+
+
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult AddModule(string title, string subtitle, string iconClass, string category, string categoryColor, string isFeatured)
         {
@@ -304,7 +348,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult EditModule(string slug, string title, string subtitle, string category, string iconClass, string categoryColor, string isFeatured)
         {
@@ -326,7 +370,7 @@ namespace Sharepoint.Controllers
 
 
 
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult DeleteModule(string slug)
         {
@@ -353,60 +397,7 @@ namespace Sharepoint.Controllers
 
 
 
-
-        [HttpPost]
-        public IActionResult DeleteFile(int fileId, string moduleId)
-        {
-            if (string.IsNullOrEmpty(moduleId))
-                return BadRequest("Module ID is missing.");
-
-            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
-            if (file != null)
-            {
-                file.IsDeleted = true;
-                file.DeletedAt = DateTime.Now;
-                file.DeletedBy = "Current User";
-                _context.SaveChanges();
-            }
-            return RedirectToAction("Module", new { id = moduleId });
-        }
-
-
-
-
-        [HttpPost]
-        public IActionResult RestoreFile(int fileId, string moduleId)
-        {
-            var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
-
-            if (file != null)
-            {
-                file.IsDeleted = false;
-                file.DeletedAt = null;
-                file.DeletedBy = null;
-                _context.SaveChanges();
-            }
-
-            return RedirectToAction("Module", new { id = moduleId });
-        }
-
-
-        public IActionResult DownloadFile(string moduleId, string fileName)
-        {
-            if (string.IsNullOrEmpty(moduleId) || string.IsNullOrEmpty(fileName))
-                return BadRequest("Invalid file.");
-
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", moduleId);
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
-            var bytes = System.IO.File.ReadAllBytes(filePath);
-            var contentType = "application/octet-stream"; // forces download
-            return File(bytes, contentType, fileName);
-        }
-
+        
 
 
 

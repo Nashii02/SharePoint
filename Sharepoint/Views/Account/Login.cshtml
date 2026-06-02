@@ -1,0 +1,217 @@
+﻿@model LoginViewModel
+@{
+    Layout = null;
+}
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+    * {
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .hero-texture {
+        background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    .input-field:focus {
+        outline: none;
+        border-color: #1B2A6B;
+        box-shadow: 0 0 0 3px rgba(27,42,107,0.12);
+    }
+
+</style>
+
+<div class="min-h-screen bg-[#F4F6FB] flex items-center justify-center p-4 relative overflow-hidden">
+
+    <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-[0.05] pointer-events-none" style="background:#1B2A6B;"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.04] pointer-events-none" style="background:#1B2A6B;"></div>
+
+    <div class="w-full max-w-sm relative z-10">
+
+        <!-- Back link -->
+        <a href="/Home/WorkInstruction"
+           class="flex items-center gap-1.5 text-xs text-[#1B2A6B]/60 hover:text-[#1B2A6B] transition mb-4 w-fit">
+            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+            Back to Work Instructions
+        </a>
+
+        <div class="bg-white rounded-2xl overflow-hidden"
+             style="border:1px solid #E8EAF0; box-shadow: 0 20px 60px rgba(27,42,107,0.15);">
+
+            <!-- Header -->
+            <div class="bg-[#1B2A6B] hero-texture px-8 py-7 text-white relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.06]" style="background:white;"></div>
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-semibold text-blue-300/70 uppercase tracking-widest">IT Solutions</p>
+                        <p class="text-xs font-semibold text-white/80">Work Instructions</p>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+                <p class="text-blue-200/70 text-xs mt-1">Sign in to your account</p>
+            </div>
+
+            <!-- Tab switcher -->
+            <div class="flex" style="border-bottom: 1px solid #F0F1F5;">
+                <button type="button" onclick="showTab('login')" id="tab-login"
+                        class="flex-1 text-xs font-semibold py-3 transition"
+                        style="color: #1B2A6B; border-bottom: 2px solid #1B2A6B;">
+                    Sign In
+                </button>
+                <button type="button" onclick="showTab('register')" id="tab-register"
+                        class="flex-1 text-xs font-semibold py-3 transition"
+                        style="color: #9ca3af; border-bottom: 2px solid transparent;">
+                    Create Account
+                </button>
+            </div>
+
+            <div class="px-8 py-7">
+
+                <!-- Error messages -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-start gap-2.5">
+                        <i class="fa-solid fa-circle-exclamation text-red-400 text-sm mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <p class="text-xs text-red-600">@error.ErrorMessage</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- LOGIN FORM -->
+                <div id="panel-login">
+                    <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Email address</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input asp-for="Email" type="email" placeholder="you@company.com"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Password</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input asp-for="Password" type="password" id="login-password"
+                                       placeholder="••••••••"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                                <button type="button" onclick="togglePassword('login-password', 'eye-login')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
+                                    <i id="eye-login" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input asp-for="RememberMe" type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1B2A6B]" />
+                                <span class="text-xs text-gray-500">Remember me</span>
+                            </label>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-[#1B2A6B] hover:bg-[#152255] text-white text-sm font-semibold py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                            Sign in
+                        </button>
+                    </form>
+                </div>
+
+                <!-- REGISTER FORM -->
+                <div id="panel-register" style="display:none;">
+                    <form method="post" asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Email address</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input type="email" name="email" placeholder="you@company.com"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Password</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input type="password" name="password" id="reg-password"
+                                       placeholder="••••••••"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                                <button type="button" onclick="togglePassword('reg-password', 'eye-reg')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
+                                    <i id="eye-reg" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Confirm Password</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                                <input type="password" name="confirmPassword" id="reg-confirm"
+                                       placeholder="••••••••"
+                                       class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
+                                <button type="button" onclick="togglePassword('reg-confirm', 'eye-confirm')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
+                                    <i id="eye-confirm" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Role note -->
+                        <div class="mb-5 rounded-lg px-3 py-2.5 flex items-center gap-2"
+                             style="background:#F5F6FA; border:1px solid #E8EAF0;">
+                            <i class="fa-solid fa-circle-info text-[#1B2A6B]/40 text-xs flex-shrink-0"></i>
+                            <p class="text-[10px] text-gray-400 leading-relaxed">
+                                New accounts are created as <span class="font-semibold text-[#1B2A6B]">User</span> by default. An admin can change your role later.
+                            </p>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-[#1B2A6B] hover:bg-[#152255] text-white text-sm font-semibold py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-plus text-xs"></i>
+                            Create Account
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tab) {
+        const isLogin = tab === 'login';
+        document.getElementById('panel-login').style.display    = isLogin ? 'block' : 'none';
+        document.getElementById('panel-register').style.display = isLogin ? 'none'  : 'block';
+
+        const activeStyle   = 'color: #1B2A6B; border-bottom: 2px solid #1B2A6B;';
+        const inactiveStyle = 'color: #9ca3af; border-bottom: 2px solid transparent;';
+        document.getElementById('tab-login').style.cssText    = isLogin ? activeStyle : inactiveStyle;
+        document.getElementById('tab-register').style.cssText = isLogin ? inactiveStyle : activeStyle;
+    }
+
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon  = document.getElementById(iconId);
+        input.type  = input.type === 'password' ? 'text' : 'password';
+        icon.className = input.type === 'password'
+            ? 'fa-solid fa-eye text-xs'
+            : 'fa-solid fa-eye-slash text-xs';
+    }
+</script>
