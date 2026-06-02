@@ -277,11 +277,16 @@ namespace Sharepoint.Controllers
             var file = _context.ModuleFiles.FirstOrDefault(f => f.Id == fileId);
             if (file != null)
             {
-                file.IsDeleted = true;
-                file.DeletedAt = DateTime.Now;
-                file.DeletedBy = "Current User";
+                // Delete physical file from disk
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", moduleId, file.FileName + "." + file.FileType);
+                if (System.IO.File.Exists(filePath))
+                    System.IO.File.Delete(filePath);
+
+                // Remove record from DB entirely
+                _context.ModuleFiles.Remove(file);
                 _context.SaveChanges();
             }
+
             return RedirectToAction("Module", new { id = moduleId });
         }
 
@@ -327,6 +332,10 @@ namespace Sharepoint.Controllers
 
             if (_context.Modules.Any(m => m.Slug == slug))
                 slug = slug + DateTime.Now.Ticks.ToString()[^4..];
+
+            // Auto create a folder for the module
+            var moduleFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", slug);
+            Directory.CreateDirectory(moduleFolder);
 
             _context.Modules.Add(new Module
             {

@@ -23,11 +23,11 @@
         public string ModuleSlug { get; set; } = "";
         public string FileName { get; set; } = "";
         public string FileType { get; set; } = "";
-        public string FilePath { get; set; } = "";
+        public string? FilePath { get; set; }
         public string FileUrl { get; set; } = "";
+        public string? FileSize { get; set; }
         public DateTime UploadedDate { get; set; }
-        public string? Description { get; set; } = "";
-        public string? FileSize { get; set; } = "";
+        public string? Description { get; set; }
         public string Url => FileUrl;
         public int Version { get; set; } = 1;
         public bool IsDeleted { get; set; } = false;
@@ -44,6 +44,6 @@
         public string ModuleSlug { get; set; } = "";
         public List<ModuleFile> Files { get; set; } = new();
         public List<ModuleFile> DeletedFiles { get; set; } = new();
-        
+
     }
 }
