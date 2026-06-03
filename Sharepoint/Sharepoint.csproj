@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="NewFolder1\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\uploads\budget\" />
   </ItemGroup>

@@ -87,4 +87,10 @@
         public DateTime? BannedAt { get; set; }
         public string? BannedReason { get; set; }
     }
+
+    public class SendOtpRequest
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
 }

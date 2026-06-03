@@ -22,7 +22,12 @@
         box-shadow: 0 0 0 3px rgba(27,42,107,0.12);
     }
 
-    /* Scrollbar thin */
+    .otp-digit:focus {
+        outline: none;
+        border-color: #1B2A6B !important;
+        box-shadow: 0 0 0 3px rgba(27,42,107,0.12);
+    }
+
     ::-webkit-scrollbar {
         width: 4px;
         height: 4px;
@@ -36,24 +41,30 @@
         background: #d1d5db;
         border-radius: 4px;
     }
+
+    /* Slide transition */
+    .step {
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+        .step.hidden-step {
+            display: none;
+        }
 </style>
 
 <div class="min-h-screen flex">
-    <!-- LEFT SIDE - Navy Blue with Dots -->
-    <div class="hidden md:flex md:w-1/2 bg-[#1B2A6B] dot-pattern flex-col p-8 relative overflow-hidden">
 
+    <!-- LEFT SIDE -->
+    <div class="hidden md:flex md:w-1/2 bg-[#1B2A6B] dot-pattern flex-col p-8 relative overflow-hidden">
         <div class="absolute right-20 pointer-events-none hidden md:block">
             <img src="~/images/NoBGLogo.png"
                  class="w-100 h-100 object-contain filter brightness-0 invert opacity-[0.07] translate-y-8" />
         </div>
-
-        <!-- Branding section at bottom -->
         <div class="mt-auto">
             <div class="flex items-center gap-3 mb-5">
                 <div class="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center">
                     <img src="~/images/NoBGLogo.png"
-                         class="w-8 h-8 object-contain filter brightness-0 invert"
-                         alt="Logo" />
+                         class="w-8 h-8 object-contain filter brightness-0 invert" alt="Logo" />
                 </div>
                 <div>
                     <p class="text-[11px] font-semibold text-blue-200 uppercase tracking-widest">IT Solutions</p>
@@ -66,10 +77,10 @@
         </div>
     </div>
 
-    <!-- RIGHT SIDE - White Modal -->
+    <!-- RIGHT SIDE -->
     <div class="w-full md:w-1/2 flex items-center justify-center p-4 bg-[#F4F6FB]">
         <div class="w-full max-w-sm">
-            <!-- Mobile back button -->
+
             <a href="/Home/WorkInstruction"
                class="flex md:hidden items-center gap-1.5 text-xs text-[#1B2A6B]/60 hover:text-[#1B2A6B] transition mb-4 w-fit">
                 <i class="fa-solid fa-arrow-left text-[10px]"></i>
@@ -79,109 +90,385 @@
             <div class="bg-white rounded-2xl overflow-hidden"
                  style="border:1px solid #E8EAF0; box-shadow: 0 20px 60px rgba(27,42,107,0.15);">
 
-                <!-- Header -->
-                <div class="bg-[#1B2A6B] px-8 py-7 text-white relative overflow-hidden">
-                    <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.06]" style="background:white;"></div>
-                    <div class="relative z-10">
-                        <h1 class="text-2xl font-bold tracking-tight">Create Account</h1>
-                        <p class="text-blue-200/70 text-xs mt-1">Join our platform</p>
-                    </div>
-                </div>
+                <!-- ── STEP 1: REGISTER FORM ── -->
+                <div id="step-register" class="step">
 
-                <div class="px-8 py-7">
-
-                    <!-- Error messages -->
-                    @if (!ViewData.ModelState.IsValid)
-                    {
-                        <div class="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-start gap-2.5">
-                            <i class="fa-solid fa-circle-exclamation text-red-400 text-sm mt-0.5 flex-shrink-0"></i>
-                            <div>
-                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                                {
-                                    <p class="text-xs text-red-600">@error.ErrorMessage</p>
-                                }
-                            </div>
+                    <!-- Header -->
+                    <div class="bg-[#1B2A6B] px-8 py-7 text-white relative overflow-hidden">
+                        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.06]" style="background:white;"></div>
+                        <div class="relative z-10">
+                            <h1 class="text-2xl font-bold tracking-tight">Create Account</h1>
+                            <p class="text-blue-200/70 text-xs mt-1">Join our platform</p>
                         </div>
-                    }
+                    </div>
 
-                    <!-- REGISTER FORM -->
-                    <form method="post" asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">
-                        @Html.AntiForgeryToken()
+                    <div class="px-8 py-7">
+
+                        <!-- Server-side errors -->
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-start gap-2.5">
+                                <i class="fa-solid fa-circle-exclamation text-red-400 text-sm mt-0.5 flex-shrink-0"></i>
+                                <div>
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <p class="text-xs text-red-600">@error.ErrorMessage</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Client-side error -->
+                        <div id="reg-error" class="hidden mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-start gap-2.5">
+                            <i class="fa-solid fa-circle-exclamation text-red-400 text-sm mt-0.5 flex-shrink-0"></i>
+                            <p id="reg-error-msg" class="text-xs text-red-600"></p>
+                        </div>
 
                         <div class="mb-4">
                             <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Email address</label>
                             <div class="relative">
                                 <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
-                                <input asp-for="Email" type="email" placeholder="you@company.com"
+                                <input type="email" id="reg-email" placeholder="you@company.com"
                                        class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
                             </div>
-                            <span asp-validation-for="Email" class="text-xs text-red-500 mt-1 block"></span>
                         </div>
 
                         <div class="mb-4">
                             <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Password</label>
                             <div class="relative">
                                 <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
-                                <input asp-for="Password" type="password" id="reg-password"
-                                       placeholder="••••••••"
+                                <input type="password" id="reg-password" placeholder="••••••••"
                                        class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
-                                <button type="button" onclick="togglePassword('reg-password', 'eye-reg')"
+                                <button type="button" onclick="togglePassword('reg-password','eye-reg')"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
                                     <i id="eye-reg" class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
-                            <span asp-validation-for="Password" class="text-xs text-red-500 mt-1 block"></span>
                         </div>
 
                         <div class="mb-5">
                             <label class="text-[11px] font-semibold text-[#1B2A6B] block mb-1.5">Confirm Password</label>
                             <div class="relative">
                                 <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
-                                <input asp-for="ConfirmPassword" type="password" id="reg-confirm"
-                                       placeholder="••••••••"
+                                <input type="password" id="reg-confirm" placeholder="••••••••"
                                        class="input-field w-full border border-gray-200 rounded-lg pl-9 pr-10 py-2.5 text-sm text-gray-700 transition bg-[#FAFBFF]" />
-                                <button type="button" onclick="togglePassword('reg-confirm', 'eye-confirm')"
+                                <button type="button" onclick="togglePassword('reg-confirm','eye-confirm')"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition">
                                     <i id="eye-confirm" class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
-                            <span asp-validation-for="ConfirmPassword" class="text-xs text-red-500 mt-1 block"></span>
                         </div>
 
-                        <!-- Role note -->
                         <div class="mb-5 rounded-lg px-3 py-2.5 flex items-start gap-2"
                              style="background:#F5F6FA; border:1px solid #E8EAF0;">
                             <i class="fa-solid fa-circle-info text-[#1B2A6B]/40 text-xs flex-shrink-0 mt-0.5"></i>
                             <p class="text-[10px] text-gray-400 leading-relaxed">
-                                New accounts are created as <span class="font-semibold text-[#1B2A6B]">User</span> by default. An admin can change your role later.
+                                New accounts are created as <span class="font-semibold text-[#1B2A6B]">User</span> by default.
                             </p>
                         </div>
 
-                        <button type="submit"
+                        <button type="button" onclick="sendOtp()"
+                                id="send-otp-btn"
                                 class="w-full bg-[#1B2A6B] hover:bg-[#152255] text-white text-sm font-semibold py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-user-plus text-xs"></i>
-                            Create Account
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                            <span id="send-btn-text">Send Verification Code</span>
                         </button>
-                    </form>
 
-                    <!-- Sign In Link -->
-                    <div class="mt-6 pt-6 flex items-center justify-center" style="border-top: 1px solid #F0F1F5;">
-                        <p class="text-xs text-gray-500">
-                            Already have an account?
-                            <a href="/Account/Login"
-                               class="font-semibold text-[#1B2A6B] hover:text-[#152255] transition">
-                                Sign in here
-                            </a>
-                        </p>
+                        <div class="mt-6 pt-6 flex items-center justify-center" style="border-top: 1px solid #F0F1F5;">
+                            <p class="text-xs text-gray-500">
+                                Already have an account?
+                                <a href="/Account/Login" class="font-semibold text-[#1B2A6B] hover:text-[#152255] transition">
+                                    Sign in here
+                                </a>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ── STEP 2: OTP VERIFICATION ── -->
+                <div id="step-otp" class="step hidden-step">
+
+                    <!-- Header -->
+                    <div class="bg-[#1B2A6B] px-8 py-8 text-white text-center relative overflow-hidden">
+                        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.06]" style="background:white;"></div>
+                        <div class="relative z-10">
+                            <div class="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-envelope-circle-check text-2xl"></i>
+                            </div>
+                            <h1 class="text-xl font-bold">Check your email</h1>
+                            <p class="text-blue-200/70 text-sm mt-1">We sent a 6-digit code to</p>
+                            <p id="otp-email-display" class="text-white font-semibold text-sm mt-0.5"></p>
+                        </div>
                     </div>
 
+                    <div class="px-8 py-8">
+
+                        <!-- OTP error -->
+                        <div id="otp-error" class="hidden mb-5 px-4 py-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2"
+                             style="border: 1px solid #FECACA;">
+                            <i class="fa-solid fa-circle-exclamation text-xs flex-shrink-0"></i>
+                            <span id="otp-error-msg"></span>
+                        </div>
+
+                        <!-- OTP success -->
+                        <div id="otp-info" class="hidden mb-5 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm flex items-center gap-2"
+                             style="border: 1px solid #BBF7D0;">
+                            <i class="fa-solid fa-circle-check text-xs flex-shrink-0"></i>
+                            <span id="otp-info-msg"></span>
+                        </div>
+
+                        <!-- The actual form that submits to the server -->
+                        <form method="post" action="/Account/VerifyOtp" id="otp-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="email" id="hidden-email" />
+                            <input type="hidden" name="password" id="hidden-password" />
+                            <input type="hidden" name="code" id="otp-hidden" />
+
+                            <p class="text-xs font-semibold text-[#1B2A6B] text-center mb-4">
+                                Enter the 6-digit verification code
+                            </p>
+
+                            <!-- OTP digit boxes -->
+                            <div class="flex gap-2 justify-center mb-2">
+                                @for (int i = 0; i < 6; i++)
+                                {
+                                    <input type="text"
+                                           maxlength="1"
+                                           id="digit-@i"
+                                           class="otp-digit w-11 h-13 text-center text-xl font-bold rounded-xl transition"
+                                           style="border: 1.5px solid #E8EAF0; background: #FAFBFF; color: #1B2A6B; height: 52px;"
+                                           inputmode="numeric"
+                                           autocomplete="off" />
+                                }
+                            </div>
+
+                            <p class="text-[10px] text-gray-400 text-center mb-6">
+                                Code expires in
+                                <span id="countdown" class="font-semibold text-[#1B2A6B]">10:00</span>
+                            </p>
+
+                            <button type="submit"
+                                    class="w-full text-white text-sm font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
+                                    style="background: #1B2A6B;">
+                                <i class="fa-solid fa-shield-check text-xs"></i>
+                                Verify &amp; Create Account
+                            </button>
+                        </form>
+
+                        <!-- Resend + back -->
+                        <div class="mt-5 text-center">
+                            <p class="text-xs text-gray-400 mb-2">Didn't receive the code?</p>
+                            <button type="button" onclick="resendOtp()"
+                                    class="text-xs font-semibold text-[#1B2A6B] underline underline-offset-2 hover:text-blue-800 transition">
+                                Resend code
+                            </button>
+                            <span class="text-xs text-gray-300 mx-2">·</span>
+                            <button type="button" onclick="goBack()"
+                                    class="text-xs font-semibold text-gray-400 underline underline-offset-2 hover:text-gray-600 transition">
+                                Use a different email
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // ── STATE ──────────────────────────────────────────────────
+    let currentEmail    = '';
+    let currentPassword = '';
+    let countdownTimer  = null;
+
+    // ── STEP SWITCHING ─────────────────────────────────────────
+    function showStep(step) {
+        document.getElementById('step-register').classList.toggle('hidden-step', step !== 'register');
+        document.getElementById('step-otp').classList.toggle('hidden-step', step !== 'otp');
+    }
+
+    function goBack() {
+        clearInterval(countdownTimer);
+        showStep('register');
+    }
+
+    // ── SEND OTP ───────────────────────────────────────────────
+    async function sendOtp() {
+        const email    = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const confirm  = document.getElementById('reg-confirm').value;
+
+        // Client-side validation
+        if (!email) return showRegError('Please enter your email address.');
+        if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email))
+            return showRegError('Please enter a valid email address.');
+        if (!password) return showRegError('Please enter a password.');
+        if (password.length < 6) return showRegError('Password must be at least 6 characters.');
+        if (password !== confirm) return showRegError('Passwords do not match.');
+
+        // Disable button and show loading
+        const btn  = document.getElementById('send-otp-btn');
+        const text = document.getElementById('send-btn-text');
+        btn.disabled    = true;
+        text.textContent = 'Sending...';
+
+        try {
+            const res = await fetch('/Account/SendOtp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                showRegError(data.message || 'Failed to send code. Please try again.');
+                btn.disabled    = false;
+                text.textContent = 'Send Verification Code';
+                return;
+            }
+
+            // Success — switch to OTP step
+            currentEmail    = email;
+            currentPassword = password;
+
+            document.getElementById('otp-email-display').textContent = email;
+            document.getElementById('hidden-email').value    = email;
+            document.getElementById('hidden-password').value = password;
+
+            hideRegError();
+            showStep('otp');
+            startCountdown();
+            setTimeout(() => document.getElementById('digit-0')?.focus(), 100);
+
+        } catch {
+            showRegError('Network error. Please try again.');
+            btn.disabled    = false;
+            text.textContent = 'Send Verification Code';
+        }
+    }
+
+    // ── RESEND OTP ─────────────────────────────────────────────
+    async function resendOtp() {
+        if (!currentEmail) return;
+
+        clearInterval(countdownTimer);
+        document.getElementById('otp-info').classList.add('hidden');
+        document.getElementById('otp-error').classList.add('hidden');
+
+        try {
+            const res = await fetch('/Account/SendOtp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({ email: currentEmail, password: currentPassword })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showOtpInfo('A new code has been sent to your email.');
+                startCountdown();
+                // Clear old digits
+                for (let i = 0; i < 6; i++) {
+                    const d = document.getElementById('digit-' + i);
+                    if (d) d.value = '';
+                }
+                document.getElementById('otp-hidden').value = '';
+                document.getElementById('digit-0')?.focus();
+            } else {
+                showOtpError(data.message || 'Failed to resend. Try again.');
+            }
+        } catch {
+            showOtpError('Network error. Please try again.');
+        }
+    }
+
+    // ── COUNTDOWN ──────────────────────────────────────────────
+    function startCountdown() {
+        clearInterval(countdownTimer);
+        let seconds = 600;
+        const el = document.getElementById('countdown');
+        el.style.color = '';
+
+        countdownTimer = setInterval(() => {
+            seconds--;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            el.textContent = `${m}:${s}`;
+            if (seconds <= 0) {
+                clearInterval(countdownTimer);
+                el.textContent = 'Expired';
+                el.style.color  = '#ef4444';
+            }
+        }, 1000);
+    }
+
+    // ── OTP INPUT HANDLING ─────────────────────────────────────
+    const digits = Array.from({ length: 6 }, (_, i) => document.getElementById('digit-' + i));
+    const hidden = document.getElementById('otp-hidden');
+
+    digits.forEach((input, i) => {
+        input.addEventListener('keypress', e => {
+            if (!/[0-9]/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '').slice(0, 1);
+            if (input.value && i < 5) digits[i + 1].focus();
+            syncHidden();
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !input.value && i > 0) {
+                digits[i - 1].focus();
+                digits[i - 1].value = '';
+                syncHidden();
+            }
+        });
+    });
+
+    document.addEventListener('paste', e => {
+        if (document.getElementById('step-otp').classList.contains('hidden-step')) return;
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData)
+            .getData('text').replace(/\D/g, '').slice(0, 6);
+        pasted.split('').forEach((char, i) => { if (digits[i]) digits[i].value = char; });
+        syncHidden();
+        const next = digits[Math.min(pasted.length, 5)];
+        if (next) next.focus();
+    });
+
+    function syncHidden() {
+        hidden.value = digits.map(d => d.value).join('');
+    }
+
+    // ── HELPERS ────────────────────────────────────────────────
+    function showRegError(msg) {
+        const el = document.getElementById('reg-error');
+        document.getElementById('reg-error-msg').textContent = msg;
+        el.classList.remove('hidden');
+    }
+    function hideRegError() {
+        document.getElementById('reg-error').classList.add('hidden');
+    }
+    function showOtpError(msg) {
+        document.getElementById('otp-error-msg').textContent = msg;
+        document.getElementById('otp-error').classList.remove('hidden');
+        document.getElementById('otp-info').classList.add('hidden');
+    }
+    function showOtpInfo(msg) {
+        document.getElementById('otp-info-msg').textContent = msg;
+        document.getElementById('otp-info').classList.remove('hidden');
+        document.getElementById('otp-error').classList.add('hidden');
+    }
+
     function togglePassword(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon  = document.getElementById(iconId);

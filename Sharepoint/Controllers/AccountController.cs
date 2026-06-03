@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Sharepoint.Data;
 using Sharepoint.Models;
+using Sharepoint.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace Sharepoint.Controllers
 {
@@ -13,19 +15,22 @@ namespace Sharepoint.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IHttpContextAccessor _httpContext;
         private readonly AppDbContext _context;
+        private readonly EmailService _emailService;        // ← add this
 
         public AccountController(
             SignInManager<IdentityUser> signIn,
             UserManager<IdentityUser> users,
             RoleManager<IdentityRole> roleManager,
             IHttpContextAccessor httpContext,
-            AppDbContext context)
+            AppDbContext context,
+            EmailService emailService)
         {
             _signIn = signIn;
             _users = users;
             _roleManager = roleManager;
             _httpContext = httpContext;
             _context = context;
+            _emailService = emailService;  
         }
 
         // ── LOGIN ──────────────────────────────────────────────
@@ -148,27 +153,183 @@ namespace Sharepoint.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (!ModelState.IsValid) return View(model);
 
-            var user = new IdentityUser
+            // Check if email already taken
+            var existing = await _users.FindByEmailAsync(model.Email);
+            if (existing != null)
             {
-                UserName = model.Email,
-                Email = model.Email,
-                EmailConfirmed = true,  // No email verification required
-                NormalizedEmail = model.Email.ToUpper(),
-                NormalizedUserName = model.Email.ToUpper()
-            };
-
-            var result = await _users.CreateAsync(user, model.Password);
-            if (result.Succeeded)
-            {
-                await _users.AddToRoleAsync(user, "User");
-                TempData["Success"] = "Registration successful! You can now sign in.";
-                return RedirectToAction("Login");
+                ModelState.AddModelError("", "An account with this email already exists.");
+                return View(model);
             }
 
-            foreach (var error in result.Errors)
-                ModelState.AddModelError("", error.Description);
+            // Generate 6-digit OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expires = DateTime.Now.AddMinutes(10).ToString("o");
 
-            return View(model);
+            // Store registration data in TempData until verified
+            TempData["Reg_Email"] = model.Email;
+            TempData["Reg_Password"] = model.Password;
+            TempData["Reg_OTP"] = otp;
+            TempData["Reg_Expires"] = expires;
+            TempData.Keep();
+
+            // Send OTP email
+            await _emailService.SendOtpAsync(model.Email, otp);
+
+            return RedirectToAction("VerifyOtp");
+        }
+
+        [HttpGet]
+        public IActionResult VerifyOtp()
+        {
+            // If no pending registration, redirect back
+            if (TempData["Reg_Email"] == null)
+                return RedirectToAction("Register");
+
+            TempData.Keep();
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyOtp(string code)
+        {
+            var email = TempData["Reg_Email"] as string;
+            var password = TempData["Reg_Password"] as string;
+            var otp = TempData["Reg_OTP"] as string;
+            var expires = TempData["Reg_Expires"] as string;
+
+            if (email == null || otp == null || expires == null)
+            {
+                TempData["Error"] = "Session expired. Please register again.";
+                return RedirectToAction("Register");
+            }
+
+            // Check expiry
+            if (DateTime.Parse(expires) < DateTime.Now)
+            {
+                TempData["Error"] = "Code has expired. Please register again.";
+                return RedirectToAction("Register");
+            }
+
+            // Check code
+            if (code.Trim() != otp)
+            {
+                TempData.Keep();
+                TempData["OtpError"] = "Incorrect code. Please try again.";
+                return View();
+            }
+            
+
+            var user = new IdentityUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+
+            var result = await _users.CreateAsync(user, password!);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Register");
+            }
+
+            await _users.AddToRoleAsync(user, "User");
+
+            TempData["Success"] = "Account created! You can now sign in.";
+            return RedirectToAction("Login");
+        }
+        [HttpPost]
+        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+                return BadRequest(new { success = false, message = "Email and password are required." });
+
+            // Check if email already taken
+            var existing = await _users.FindByEmailAsync(request.Email);
+            if (existing != null)
+                return Ok(new { success = false, message = "An account with this email already exists." });
+
+            // Generate OTP and store in TempData
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expires = DateTime.Now.AddMinutes(10).ToString("o");
+
+            TempData["Reg_Email"] = request.Email;
+            TempData["Reg_Password"] = request.Password;
+            TempData["Reg_OTP"] = otp;
+            TempData["Reg_Expires"] = expires;
+            TempData.Keep();
+
+            await _emailService.SendOtpAsync(request.Email, otp);
+
+            return Ok(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyOtp(string code, string email, string password)
+        {
+            var otpStored = TempData["Reg_OTP"] as string;
+            var expires = TempData["Reg_Expires"] as string;
+
+            // Fallback to hidden fields if TempData expired
+            var regEmail = (TempData["Reg_Email"] as string) ?? email;
+            var regPassword = (TempData["Reg_Password"] as string) ?? password;
+
+            if (string.IsNullOrEmpty(otpStored) || string.IsNullOrEmpty(expires))
+            {
+                TempData["Error"] = "Session expired. Please register again.";
+                return RedirectToAction("Register");
+            }
+
+            if (DateTime.Parse(expires) < DateTime.Now)
+            {
+                TempData["Error"] = "Code has expired. Please register again.";
+                return RedirectToAction("Register");
+            }
+
+            if (code.Trim() != otpStored)
+            {
+                TempData.Keep();
+                TempData["OtpError"] = "Incorrect code. Please try again.";
+                return RedirectToAction("Register");
+            }
+
+            var user = new IdentityUser
+            {
+                UserName = regEmail,
+                Email = regEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await _users.CreateAsync(user, regPassword!);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Register");
+            }
+
+            await _users.AddToRoleAsync(user, "User");
+            TempData["Success"] = "Account created! You can now sign in.";
+            return RedirectToAction("Login");
+        }
+
+        // Resend OTP
+        [HttpPost]
+        public async Task<IActionResult> ResendOtp()
+        {
+            var email = TempData["Reg_Email"] as string;
+            if (email == null) return RedirectToAction("Register");
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expires = DateTime.Now.AddMinutes(10).ToString("o");
+
+            TempData["Reg_OTP"] = otp;
+            TempData["Reg_Expires"] = expires;
+            TempData.Keep();
+
+            await _emailService.SendOtpAsync(email, otp);
+
+            TempData["OtpInfo"] = "A new code has been sent to your email.";
+            return RedirectToAction("VerifyOtp");
         }
 
         // ── MANAGE USERS ───────────────────────────────────────
