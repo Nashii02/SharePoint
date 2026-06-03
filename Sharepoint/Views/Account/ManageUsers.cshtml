@@ -1,6 +1,7 @@
 ﻿@model UserManagementViewModel
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<IdentityUser> UserManager
+
 @{
     Layout = null;
 }
@@ -46,44 +47,26 @@
 
         <div class="relative max-w-7xl mx-auto px-8">
 
-            <!-- Navbar -->
-            <div class="flex items-center justify-between py-4"
-                 style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
-                        <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-                    </div>
-                    <span class="text-sm font-semibold text-white/90 tracking-tight">IT Solutions</span>
-                    <span class="text-white/20 text-xs">|</span>
-                    <span class="text-xs text-blue-300/80 font-medium">Admin Panel</span>
-                </div>
-                <div class="flex items-center gap-3">
+            <!-- Breadcrumb + Title -->
+            <div class="py-8">
+
+                <!-- Top row: breadcrumb LEFT, logged-in user RIGHT -->
+                <div class="flex items-center justify-between mb-4">
+                    <nav class="inline-flex items-center gap-2 text-xs">
+                        <a href="/Home/WorkInstruction"
+                           class="text-blue-300 hover:text-white transition">
+                            Work Instructions
+                        </a>
+                        <i class="fa-solid fa-chevron-right text-[8px] text-blue-400/60"></i>
+                        <span class="text-white/80 font-medium">User Management</span>
+                    </nav>
+
                     <div class="flex items-center gap-1.5 text-xs text-white/50">
                         <i class="fa-solid fa-user text-[10px]"></i>
                         <span>@User.Identity?.Name</span>
                     </div>
-                    <form method="post" asp-controller="Account" asp-action="Logout" style="display:inline;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit"
-                                class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
-                                style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
-                            <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
-                            Sign out
-                        </button>
-                    </form>
                 </div>
-            </div>
 
-            <!-- Breadcrumb + Title -->
-            <div class="py-8">
-                <nav class="inline-flex items-center gap-2 text-xs mb-4">
-                    <a href="/Home/WorkInstruction"
-                       class="text-blue-300 hover:text-white transition">
-                        Work Instructions
-                    </a>
-                    <i class="fa-solid fa-chevron-right text-[8px] text-blue-400/60"></i>
-                    <span class="text-white/80 font-medium">User Management</span>
-                </nav>
                 <h1 class="text-4xl font-bold tracking-tight leading-none">
                     USER<br />MANAGEMENT
                 </h1>
@@ -115,7 +98,6 @@
                     var (bg, text, icon) = role switch
                     {
                         "Admin" => ("bg-[#EEF2FF]", "text-[#1B2A6B]", "fa-solid fa-user-shield"),
-                        "Quality Assurance" => ("bg-purple-50", "text-purple-700", "fa-solid fa-user-check"),
                         "User" => ("bg-sky-50", "text-sky-700", "fa-solid fa-user"),
                         "Guest" => ("bg-amber-50", "text-amber-700", "fa-solid fa-user-secret"),
                         _ => ("bg-gray-50", "text-gray-500", "fa-solid fa-user")
@@ -197,7 +179,6 @@
                             var (roleBg, roleText) = user.Role switch
                             {
                                 "Admin" => ("bg-[#EEF2FF]", "text-[#1B2A6B]"),
-                                "Quality Assurance" => ("bg-purple-50", "text-purple-700"),
                                 "User" => ("bg-sky-50", "text-sky-700"),
                                 "Guest" => ("bg-amber-50", "text-amber-700"),
                                 _ => ("bg-gray-100", "text-gray-400")
@@ -397,4 +378,20 @@
         const noFound = document.getElementById('no-users-found');
         if (noFound) noFound.style.display = visible === 0 ? 'block' : 'none';
     }
+
+        // Save scroll position before any form submit
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function () {
+            sessionStorage.setItem('scrollY', window.scrollY);
+        });
+    });
+
+    // Restore scroll position after page load
+    window.addEventListener('load', function () {
+        const scrollY = sessionStorage.getItem('scrollY');
+        if (scrollY !== null) {
+            window.scrollTo(0, parseInt(scrollY));
+            sessionStorage.removeItem('scrollY');
+        }
+    });
 </script>

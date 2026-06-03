@@ -492,7 +492,9 @@
                                 {
                                     var guestSuffix = comment.UserId.Replace("guest-", "");
                                     var displayName = comment.UserId.StartsWith("guest-")
-                                    ? "Guest#" + (guestSuffix.Length > 0 ? guestSuffix.Substring(0, Math.Min(4, guestSuffix.Length)).ToUpper() : "????")
+                                    ? (string.IsNullOrEmpty(comment.UserEmail)
+                                    ? "Guest#????"
+                                    : comment.UserEmail)
                                     : comment.UserEmail;
 
                                     var avatarLetter = displayName[0].ToString().ToUpper();
@@ -583,11 +585,18 @@
                                         {
                                             <div class="flex items-center gap-1 flex-shrink-0 self-start mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                                                  id="comment-actions-@comment.Id">
-                                                <button type="button"
-                                                        onclick="startInlineEdit(@comment.Id, '@Html.Raw(comment.Content.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "\\n"))')"
-                                                        class="action-btn" title="Edit">
-                                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                                                </button>
+
+                                                @* Edit — only for the comment owner, never for Admin acting on others *@
+                                                @if (isOwner)
+                                                {
+                                                    <button type="button"
+                                                            onclick="startInlineEdit(@comment.Id, '@Html.Raw(comment.Content.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "\\n"))')"
+                                                            class="action-btn" title="Edit">
+                                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                                    </button>
+                                                }
+
+                                                @* Delete — owner OR Admin *@
                                                 <form method="post" action="/Home/DeleteComment" style="display:contents;">
                                                     <input type="hidden" name="commentId" value="@comment.Id" />
                                                     <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
@@ -597,6 +606,7 @@
                                                         <i class="fa-solid fa-trash text-xs"></i>
                                                     </button>
                                                 </form>
+
                                             </div>
                                         }
 
@@ -1090,4 +1100,20 @@
         document.getElementById('inline-hidden-' + id).value = content;
         document.getElementById('inline-form-' + id).submit();
     }
+
+        // Save scroll position before any form submit
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function () {
+            sessionStorage.setItem('scrollY', window.scrollY);
+        });
+    });
+
+    // Restore scroll position after page load
+    window.addEventListener('load', function () {
+        const scrollY = sessionStorage.getItem('scrollY');
+        if (scrollY !== null) {
+            window.scrollTo(0, parseInt(scrollY));
+            sessionStorage.removeItem('scrollY');
+        }
+    });
 </script>

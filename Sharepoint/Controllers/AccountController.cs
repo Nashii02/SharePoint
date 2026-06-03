@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Sharepoint.Data;
 using Sharepoint.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace Sharepoint.Controllers
 {
@@ -29,6 +28,7 @@ namespace Sharepoint.Controllers
             _context = context;
         }
 
+        // ── LOGIN ──────────────────────────────────────────────
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -51,7 +51,7 @@ namespace Sharepoint.Controllers
             }
 
             var result = await _signIn.PasswordSignInAsync(
-                user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: false);
+                user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
@@ -60,20 +60,41 @@ namespace Sharepoint.Controllers
                 return RedirectToAction("WorkInstruction", "Home");
             }
 
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError("", "Account locked for 15 minutes due to too many failed attempts.");
+                return View(model);
+            }
+
             ModelState.AddModelError("", "Invalid email or password.");
             return View(model);
         }
 
+        // ── GUEST LOGIN ────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> LoginAsGuest(GuestLoginViewModel model, string? returnUrl = null)
         {
             var sessionId = HttpContext.Session.Id ?? Guid.NewGuid().ToString();
             HttpContext.Session.SetString("GuestSessionId", sessionId);
 
-            // Auto-generate nickname if not provided
-            string nickname = string.IsNullOrWhiteSpace(model.Nickname)
-                ? $"Guest{GenerateGuestNumber()}"
-                : model.Nickname.Trim();
+            string baseNickname = string.IsNullOrWhiteSpace(model.Nickname)
+                ? "Guest" : model.Nickname.Trim();
+
+            var existingNicknames = _context.GuestUsers
+                .Where(g => g.Nickname == baseNickname || g.Nickname.StartsWith(baseNickname + "#"))
+                .Select(g => g.Nickname)
+                .ToList();
+
+            string nickname;
+            if (!existingNicknames.Any())
+                nickname = baseNickname;
+            else
+            {
+                var number = 2;
+                while (existingNicknames.Contains(baseNickname + "#" + number))
+                    number++;
+                nickname = baseNickname + "#" + number;
+            }
 
             var guest = new GuestUser
             {
@@ -85,7 +106,7 @@ namespace Sharepoint.Controllers
             _context.GuestUsers.Add(guest);
             await _context.SaveChangesAsync();
 
-            // Create a synthetic claim for guest user
+            // Sign in as a temporary identity user
             await _signIn.SignInAsync(new IdentityUser
             {
                 Id = $"guest-{guest.Id}",
@@ -101,28 +122,22 @@ namespace Sharepoint.Controllers
             return RedirectToAction("WorkInstruction", "Home");
         }
 
-        private int GenerateGuestNumber()
-        {
-            var lastGuest = _context.GuestUsers
-                .OrderByDescending(g => g.Id)
-                .FirstOrDefault();
-            return lastGuest?.Id + 1 ?? 1;
-        }
-
+        // ── LOGOUT ─────────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await _signIn.SignOutAsync();
             HttpContext.Session.Remove("GuestId");
             HttpContext.Session.Remove("GuestNickname");
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login");
         }
 
+        // ── REGISTER ───────────────────────────────────────────
         [HttpGet]
         public IActionResult Register(string? returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction("WorkInstruction", "Home");
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
@@ -131,31 +146,23 @@ namespace Sharepoint.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var user = new IdentityUser
             {
                 UserName = model.Email,
                 Email = model.Email,
-                EmailConfirmed = true,
+                EmailConfirmed = true,  // No email verification required
                 NormalizedEmail = model.Email.ToUpper(),
                 NormalizedUserName = model.Email.ToUpper()
             };
 
             var result = await _users.CreateAsync(user, model.Password);
-
             if (result.Succeeded)
             {
                 await _users.AddToRoleAsync(user, "User");
-                await _signIn.SignInAsync(user, isPersistent: false);
-
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    return Redirect(returnUrl);
-                return RedirectToAction("WorkInstruction", "Home");
+                TempData["Success"] = "Registration successful! You can now sign in.";
+                return RedirectToAction("Login");
             }
 
             foreach (var error in result.Errors)
@@ -164,19 +171,18 @@ namespace Sharepoint.Controllers
             return View(model);
         }
 
-        // USER MANAGEMENT PAGE — Admin only
+        // ── MANAGE USERS ───────────────────────────────────────
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> ManageUsers()
         {
             var identityUsers = _users.Users.ToList();
             var guestUsers = _context.GuestUsers.ToList();
-            var allRoles = _roleManager.Roles.Select(r => r.Name!).ToList();
+            var allRoles = new List<string> { "Admin", "User", "Guest" };
             var currentUserId = _users.GetUserId(User);
 
             var rows = new List<UserRow>();
 
-            // Add registered users
             foreach (var user in identityUsers)
             {
                 var roles = await _users.GetRolesAsync(user);
@@ -186,11 +192,11 @@ namespace Sharepoint.Controllers
                     Email = user.Email ?? "",
                     DisplayName = user.Email ?? "",
                     Role = roles.FirstOrDefault() ?? "No Role",
-                    IsGuest = false
+                    IsGuest = false,
+                    IsVerified = user.EmailConfirmed
                 });
             }
 
-            // Add guest users
             foreach (var guest in guestUsers)
             {
                 rows.Add(new UserRow
@@ -204,7 +210,6 @@ namespace Sharepoint.Controllers
                 });
             }
 
-            // Sort: current admin first, then by role, then by name
             var sorted = rows
                 .OrderBy(u => u.Id == currentUserId ? 0 : 1)
                 .ThenBy(u => u.Role switch
@@ -224,16 +229,12 @@ namespace Sharepoint.Controllers
             });
         }
 
-        // CHANGE ROLE — Admin only
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> ChangeRole(string userId, string newRole)
         {
             if (userId.StartsWith("guest-"))
-            {
-                // Cannot change guest role — they're always "Guest"
                 return RedirectToAction("ManageUsers");
-            }
 
             var user = await _users.FindByIdAsync(userId);
             if (user == null) return RedirectToAction("ManageUsers");
@@ -241,11 +242,9 @@ namespace Sharepoint.Controllers
             var currentRoles = await _users.GetRolesAsync(user);
             await _users.RemoveFromRolesAsync(user, currentRoles);
             await _users.AddToRoleAsync(user, newRole);
-
             return RedirectToAction("ManageUsers");
         }
 
-        // DELETE USER — Admin only
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> DeleteUser(string userId)
@@ -256,6 +255,18 @@ namespace Sharepoint.Controllers
                 var guest = _context.GuestUsers.FirstOrDefault(g => g.Id == guestId);
                 if (guest != null)
                 {
+                    var reactions = _context.ModuleReactions
+                        .Where(r => r.UserId == userId).ToList();
+                    _context.ModuleReactions.RemoveRange(reactions);
+
+                    var comments = _context.ModuleComments
+                        .Where(c => c.UserId == userId).ToList();
+                    foreach (var c in comments)
+                    {
+                        c.UserId = "deleted";
+                        c.UserEmail = "[deleted]";
+                    }
+
                     _context.GuestUsers.Remove(guest);
                     await _context.SaveChangesAsync();
                 }
@@ -264,13 +275,19 @@ namespace Sharepoint.Controllers
             {
                 var user = await _users.FindByIdAsync(userId);
                 if (user != null)
+                {
+                    var reactions = _context.ModuleReactions
+                        .Where(r => r.UserId == userId).ToList();
+                    _context.ModuleReactions.RemoveRange(reactions);
+
                     await _users.DeleteAsync(user);
+                    await _context.SaveChangesAsync();
+                }
             }
 
             return RedirectToAction("ManageUsers");
         }
 
-        // BAN GUEST — Admin only
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> BanGuest(int guestId, string? reason = null)
@@ -284,7 +301,6 @@ namespace Sharepoint.Controllers
                 _context.GuestUsers.Update(guest);
                 await _context.SaveChangesAsync();
             }
-
             return RedirectToAction("ManageUsers");
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Aspose.Words;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Sharepoint.Data;
@@ -188,60 +189,72 @@ namespace Sharepoint.Controllers
         }
 
         // ADD COMMENT
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost]
-        public IActionResult AddComment(string moduleId, string content)
+        public async Task<IActionResult> AddComment(string moduleId, string content)
         {
-            if (string.IsNullOrWhiteSpace(content) || string.IsNullOrEmpty(moduleId))
-                return RedirectToAction("Module", new { id = moduleId });
+            string userId;
+            string displayName;
 
-            var user = _userManager.GetUserAsync(User).Result;
-            var guestId = HttpContext.Session.GetString("GuestId");
-            var guestNickname = HttpContext.Session.GetString("GuestNickname");
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var guestId = HttpContext.Session.GetString("GuestId");
+                var guestNickname = HttpContext.Session.GetString("GuestNickname");
 
-            var userEmail = user?.Email ?? guestNickname ?? "Guest";
+                if (guestId != null && guestNickname != null)
+                {
+                    // Guest posting a comment
+                    userId = $"guest-{guestId}";
+                    displayName = guestNickname;
+                }
+                else
+                {
+                    // Registered user
+                    userId = _userManager.GetUserId(User)!;
+                    displayName = User.Identity.Name ?? userId;
+                }
+            }
+            else
+            {
+                return Forbid();
+            }
 
-            _context.ModuleComments.Add(new ModuleComment
+            var comment = new ModuleComment
             {
                 ModuleSlug = moduleId,
-                UserId = user?.Id ?? $"guest-{guestId}",
-                UserEmail = userEmail,
-                Content = content.Trim()[..Math.Min(content.Trim().Length, 500)],
+                Content = content,
+                UserId = userId,
+                UserEmail = displayName,
                 CreatedAt = DateTime.Now
-            });
+            };
 
-            _context.SaveChanges();
+            _context.ModuleComments.Add(comment);
+            await _context.SaveChangesAsync();
+
             return RedirectToAction("Module", new { id = moduleId });
         }
+
+
 
         // EDIT COMMENT — owner or admin
         [Authorize]
         [HttpPost]
-        public IActionResult EditComment(int commentId, string moduleId, string content)
+        public async Task<IActionResult> EditComment(int commentId, string moduleId, string content)
         {
-            if (string.IsNullOrWhiteSpace(content))
-                return RedirectToAction("Module", new { id = moduleId });
+            var comment = await _context.ModuleComments.FindAsync(commentId);
+            if (comment == null) return NotFound();
 
-            var userId = _userManager.GetUserId(User);
+            var currentUserId = _userManager.GetUserId(User);
             var guestId = HttpContext.Session.GetString("GuestId");
-            var comment = _context.ModuleComments.FirstOrDefault(c => c.Id == commentId);
-
-            if (comment == null)
-                return RedirectToAction("Module", new { id = moduleId });
-
-            // Check permissions: owner or admin
-            bool isOwner = comment.UserId == userId || 
+            var isOwner = comment.UserId == currentUserId ||
                           (guestId != null && comment.UserId == $"guest-{guestId}");
-            bool isAdmin = User.IsInRole("Admin");
 
-            if (!isOwner && !isAdmin)
-                return RedirectToAction("Module", new { id = moduleId });
+            if (!isOwner) return Forbid();
 
-            comment.Content = content.Trim()[..Math.Min(content.Trim().Length, 500)];
+            comment.Content = content;
             comment.EditedAt = DateTime.Now;
-            _context.ModuleComments.Update(comment);
-            _context.SaveChanges();
 
+            await _context.SaveChangesAsync();
             return RedirectToAction("Module", new { id = moduleId });
         }
 

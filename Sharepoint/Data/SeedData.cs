@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Sharepoint.Models;
 
 namespace Sharepoint.Data
 {
@@ -9,7 +10,7 @@ namespace Sharepoint.Data
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
 
-            string[] roles = { "Admin", "User" };
+            string[] roles = { "Admin", "User", "Guest" };
             foreach (var role in roles)
                 if (!await roleManager.RoleExistsAsync(role))
                     await roleManager.CreateAsync(new IdentityRole(role));
@@ -21,14 +22,7 @@ namespace Sharepoint.Data
 
             foreach (var (email, password, role) in defaults)
             {
-                var existing = await userManager.FindByEmailAsync(email);
-                if (existing != null)
-                {
-                    // Force reset password in case it was created wrong
-                    var token = await userManager.GeneratePasswordResetTokenAsync(existing);
-                    await userManager.ResetPasswordAsync(existing, token, password);
-                }
-                else
+                if (await userManager.FindByEmailAsync(email) == null)
                 {
                     var user = new IdentityUser
                     {

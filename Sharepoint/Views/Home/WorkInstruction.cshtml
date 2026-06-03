@@ -1,6 +1,7 @@
 ﻿@model WorkInstructionViewModel
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
 
 @{
     ViewData["Title"] = "Work Instructions";
@@ -192,15 +193,7 @@
                             </button>
                         </form>
                     }
-                    else
-                    {
-                        <a href="/Account/Login?returnUrl=/Home/WorkInstruction"
-                           class="stat-pill flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
-                           style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
-                            <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
-                            Sign in
-                        </a>
-                    }
+                    
                     
                         @if (User.IsInRole("Admin"))
                         {
@@ -334,6 +327,11 @@
 
         </div>
     </section>
+    @{
+        IdentityUser? currentAppUser = null;
+        if (SignInManager.IsSignedIn(User))
+            currentAppUser = await UserManager.GetUserAsync(User);
+    }
 
     <!-- BODY -->
     <div class="flex-1 py-8 m-4">
