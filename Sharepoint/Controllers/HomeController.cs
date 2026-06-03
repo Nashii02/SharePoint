@@ -25,7 +25,7 @@ namespace Sharepoint.Controllers
         [AllowAnonymous]
         public IActionResult Index()
         {
-            return RedirectToAction("WorkInstruction");
+            return RedirectToAction("Login", "Account");
         }
 
 
@@ -161,7 +161,7 @@ namespace Sharepoint.Controllers
         }
 
         // LIKE / UNLIKE TOGGLE
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult ToggleLike(string moduleId)
         {
@@ -196,17 +196,52 @@ namespace Sharepoint.Controllers
                 return RedirectToAction("Module", new { id = moduleId });
 
             var user = _userManager.GetUserAsync(User).Result;
+            var guestId = HttpContext.Session.GetString("GuestId");
+            var guestNickname = HttpContext.Session.GetString("GuestNickname");
+
+            var userEmail = user?.Email ?? guestNickname ?? "Guest";
 
             _context.ModuleComments.Add(new ModuleComment
             {
                 ModuleSlug = moduleId,
-                UserId = user?.Id ?? "",
-                UserEmail = user?.Email ?? "Unknown",
+                UserId = user?.Id ?? $"guest-{guestId}",
+                UserEmail = userEmail,
                 Content = content.Trim()[..Math.Min(content.Trim().Length, 500)],
                 CreatedAt = DateTime.Now
             });
 
             _context.SaveChanges();
+            return RedirectToAction("Module", new { id = moduleId });
+        }
+
+        // EDIT COMMENT — owner or admin
+        [Authorize]
+        [HttpPost]
+        public IActionResult EditComment(int commentId, string moduleId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                return RedirectToAction("Module", new { id = moduleId });
+
+            var userId = _userManager.GetUserId(User);
+            var guestId = HttpContext.Session.GetString("GuestId");
+            var comment = _context.ModuleComments.FirstOrDefault(c => c.Id == commentId);
+
+            if (comment == null)
+                return RedirectToAction("Module", new { id = moduleId });
+
+            // Check permissions: owner or admin
+            bool isOwner = comment.UserId == userId || 
+                          (guestId != null && comment.UserId == $"guest-{guestId}");
+            bool isAdmin = User.IsInRole("Admin");
+
+            if (!isOwner && !isAdmin)
+                return RedirectToAction("Module", new { id = moduleId });
+
+            comment.Content = content.Trim()[..Math.Min(content.Trim().Length, 500)];
+            comment.EditedAt = DateTime.Now;
+            _context.ModuleComments.Update(comment);
+            _context.SaveChanges();
+
             return RedirectToAction("Module", new { id = moduleId });
         }
 
@@ -216,12 +251,19 @@ namespace Sharepoint.Controllers
         public IActionResult DeleteComment(int commentId, string moduleId)
         {
             var userId = _userManager.GetUserId(User);
+            var guestId = HttpContext.Session.GetString("GuestId");
             var comment = _context.ModuleComments.FirstOrDefault(c => c.Id == commentId);
 
-            if (comment != null && (User.IsInRole("Admin") || comment.UserId == userId))
+            if (comment != null)
             {
-                comment.IsDeleted = true;
-                _context.SaveChanges();
+                bool isOwner = comment.UserId == userId ||
+                              (guestId != null && comment.UserId == $"guest-{guestId}");
+                
+                if (User.IsInRole("Admin") || isOwner)
+                {
+                    comment.IsDeleted = true;
+                    _context.SaveChanges();
+                }
             }
 
             return RedirectToAction("Module", new { id = moduleId });

@@ -122,7 +122,7 @@
             <!-- Breadcrumb -->
             <nav class="mb-4 inline-flex items-center gap-2 text-xs">
                 <a href="/Home/WorkInstruction"
-                   class="text-blue-300 hover:text-white transition flex items-center gap-1.5"> 
+                   class="text-blue-300 hover:text-white transition flex items-center gap-1.5">
                     Work Instructions
                 </a>
                 <i class="fa-solid fa-chevron-right text-[8px] text-blue-400/60"></i>
@@ -132,83 +132,78 @@
             <!-- Title row -->
             <div class="flex items-end justify-between gap-6 flex-wrap">
 
+                <!-- LEFT: Title + Subtitle -->
                 <div>
-                    <h1 class="text-4xl font-bold tracking-tight leading-none">
+                    <h1 class="text-6xl font-bold tracking-tight leading-none">
                         @Model.ModuleTitle.ToUpper()
                     </h1>
-
-                    <p class="text-blue-200/80 text-sm mt-2">
-                        @Model.ModuleSubtitle
-                    </p>
+                    <p class="text-blue-200/80 text-md mt-2">@Model.ModuleSubtitle</p>
                 </div>
 
+                <!-- RIGHT: Stats + Engagement stacked -->
+                <div class="flex flex-col items-end gap-3 pb-1">
 
-                <!-- Module stat pills — in the hero -->
-                <div class="flex items-center gap-3 pb-1 flex-wrap">
-
-                    <div class="flex items-center gap-2 bg-white/10 backdrop-blur rounded-lg px-3 py-2 border border-white/10">
-                        <div class="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center">
-                            <i class="fa-solid fa-file text-white text-xs"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-blue-200/70 leading-none">Total Files</p>
-                            <p class="text-sm font-bold text-white leading-tight mt-0.5">@Model.Files.Count</p>
-                        </div>
-                    </div>
-
-
-                    @if (Model.Files.Any())
-                    {
-                        var latestFile = Model.Files.OrderByDescending(f => f.UploadedDate).FirstOrDefault();
+                    <!-- Stats pills row -->
+                    <div class="flex items-center gap-3 flex-wrap justify-end">
                         <div class="flex items-center gap-2 bg-white/10 backdrop-blur rounded-lg px-3 py-2 border border-white/10">
                             <div class="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center">
-                                <i class="fa-solid fa-clock-rotate-left text-white text-xs"></i>
+                                <i class="fa-solid fa-file text-white text-xs"></i>
                             </div>
                             <div>
-                                <p class="text-[10px] text-blue-200/70 leading-none">Last Upload</p>
-                                <p class="text-sm font-bold text-white leading-tight mt-0.5">
-                                    @latestFile?.UploadedDateFormatted
-                                </p>
+                                <p class="text-[10px] text-blue-200/70 leading-none">Total Files</p>
+                                <p class="text-sm font-bold text-white leading-tight mt-0.5">@Model.Files.Count</p>
                             </div>
                         </div>
-                    }
 
-                </div>
-
-                <!-- ENGAGEMENT BAR -->
-                <div class="flex items-center gap-4 mt-4 pt-4" 
-                     style="border-top: 1px solid rgba(255,255,255,0.08);">
-
-                    <!-- View count -->
-                    <div class="flex items-center gap-1.5 text-blue-200/60 text-xs">
-                        <i class="fa-solid fa-eye text-[11px]"></i>
-                        <span>@Model.ViewCount view(s)</span>
+                        @if (Model.Files.Any())
+                        {
+                            var latestFile = Model.Files.OrderByDescending(f => f.UploadedDate).FirstOrDefault();
+                            <div class="flex items-center gap-2 bg-white/10 backdrop-blur rounded-lg px-3 py-2 border border-white/10">
+                                <div class="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center">
+                                    <i class="fa-solid fa-clock-rotate-left text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-blue-200/70 leading-none">Last Upload</p>
+                                    <p class="text-sm font-bold text-white leading-tight mt-0.5">
+                                        @latestFile?.UploadedDateFormatted
+                                    </p>
+                                </div>
+                            </div>
+                        }
                     </div>
 
-                    <!-- Like button -->
-                    @if (SignInManager.IsSignedIn(User))
-                    {
-                        <button type="button"
-                                id="like-btn"
-                                onclick="toggleLike()"
-                                class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition"
-                                style="background: @(Model.IsLikedByMe ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.08)");
-                           border: 1px solid @(Model.IsLikedByMe ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)");
-                           color: @(Model.IsLikedByMe ? "#f87171" : "rgba(255,255,255,0.5)");">
-                            <i class="@(Model.IsLikedByMe ? "fa-solid" : "fa-regular") fa-heart text-[11px]"></i>
-                            <span id="like-count">@Model.LikeCount</span>
-                        </button>
-                    }
-                    else
-                    {
+                    <!-- Engagement row — right-aligned under stats -->
+                    <div class="flex items-center justify-end gap-4"
+                         style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; width: 100%;">
+
                         <div class="flex items-center gap-1.5 text-blue-200/60 text-xs">
-                            <i class="fa-regular fa-heart text-[11px]"></i>
-                            <span>@Model.LikeCount</span>
+                            <i class="fa-solid fa-eye text-[11px]"></i>
+                            <span>@Model.ViewCount view(s)</span>
                         </div>
-                    }
+
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <button type="button"
+                                    id="like-btn"
+                                    onclick="toggleLike()"
+                                    class="state-pill flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                                    style="background: @(Model.IsLikedByMe ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.08)");
+                                   border: 1px solid @(Model.IsLikedByMe ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)");
+                                   color: @(Model.IsLikedByMe ? "#f87171" : "rgba(255,255,255,0.5)");">
+                                <i class="@(Model.IsLikedByMe ? "fa-solid" : "fa-regular") fa-heart text-[11px]"></i>
+                                <span id="like-count">@Model.LikeCount</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="flex items-center gap-1.5 text-blue-200/60 text-xs">
+                                <i class="fa-regular fa-heart text-[11px]"></i>
+                                <span>@Model.LikeCount</span>
+                            </div>
+                        }
+                    </div>
 
                 </div>
-
             </div>
         </div>
     </section>
@@ -219,193 +214,152 @@
             <div class="@(User.IsInRole("Admin") ? "flex gap-6 items-start" : "")">
 
                 <!-- LEFT COLUMN -->
-              <div class="flex-1 flex flex-col gap-6">
+                <div class="flex-1 flex flex-col gap-6">
 
                 <!-- LEFT: FILE LIST -->
-                <div class="bg-white rounded-xl card shadow-sm flex flex-col" style="overflow: hidden; height: 600px;">
+                <div class="bg-white rounded-xl card shadow-sm flex flex-col" style="overflow: hidden; height: 400px;">
 
                     <!-- Panel header -->
-                    <div class="px-5 py-3.5 flex items-center justify-between flex-shrink-0"
+                    <div class="px-5 py-3.5 flex items-center justify-between"
                          style="border-bottom: 1px solid #F0F1F5; border-top: 3px solid #1B2A6B;">
 
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-folder-open text-[#1B2A6B] text-sm"></i>
-                            <p class="text-sm font-semibold text-[#1B2A6B]">Files</p>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-folder-open text-[#1B2A6B] text-sm"></i>
+                                <p class="text-sm font-semibold text-[#1B2A6B]">Files</p>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+
+                                <!-- Search — hidden when no files -->
+                                @if (Model.Files.Any())
+                                {
+                                    <div class="flex items-center bg-[#F5F6FA] rounded-lg px-3 py-1.5 gap-2"
+                                         style="border: 1px solid #E8EAF0;">
+                                        <i class="fa-solid fa-magnifying-glass text-gray-300 text-xs"></i>
+                                        <input type="text"
+                                               id="file-search"
+                                               placeholder="Search files..."
+                                               oninput="searchFiles(this.value)"
+                                               class="text-xs bg-transparent w-36 text-gray-600" />
+                                    </div>
+                                }
+
+                                <!-- Count pill -->
+                                <span id="file-count"
+                                      class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2.5 py-1 rounded-full">
+                                    @Model.Files.Count file(s)
+                                </span>
+                            </div>
                         </div>
 
-                        <div class="flex items-center gap-3">
-
-                            <!-- Search — hidden when no files -->
-                            @if (Model.Files.Any())
-                            {
-                                <div class="flex items-center bg-[#F5F6FA] rounded-lg px-3 py-1.5 gap-2"
-                                     style="border: 1px solid #E8EAF0;">
-                                    <i class="fa-solid fa-magnifying-glass text-gray-300 text-xs"></i>
-                                    <input type="text"
-                                           id="file-search"
-                                           placeholder="Search files..."
-                                           oninput="searchFiles(this.value)"
-                                           class="text-xs bg-transparent w-36 text-gray-600" />
-                                </div>
-                            }
-
-                            <!-- Count pill -->
-                            <span id="file-count"
-                                  class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2.5 py-1 rounded-full">
-                                @Model.Files.Count file(s)
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="overflow-y-auto" style="flex: 1; min-height: 0; overflow-x: hidden;">
+                    <div class="flex-1 overflow-y-auto" style="min-height: 0;">
 
                     @if (Model.Files.Any())
                         {
                             var fileGroups = Model.Files
-                                .OrderByDescending(f => f.UploadedDate)
                                 .GroupBy(f => f.OriginalFileName ?? f.FileName)
-                                .Select(g => new {
-                                    Latest  = g.OrderByDescending(f => f.Version).First(),
+                                .Select(g => new
+                                {
+                                    Latest = g.OrderByDescending(f => f.Version).First(),
                                     History = g.OrderByDescending(f => f.Version).Skip(1).ToList()
                                 })
                                 .ToList();
 
-                            <div id="no-files-found" style="display:none;"
-                                 class="px-5 py-10 text-center text-gray-400 text-sm">
-                                <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block text-gray-200"></i>
-                                No files match your search.
-                            </div>
+                                <div id="no-files-found" style="display:none;"
+                                     class="px-5 py-10 text-center text-gray-400 text-sm">
+                                    <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block text-gray-200"></i>
+                                    No files match your search.
+                                </div>
 
-                            <ul id="file-list" class="divide-y divide-gray-50">
-                            @foreach (var group in fileGroups)
-                            {
-                                var file = group.Latest;
-                                var (iconClass, iconColor, iconBg) = file.FileType.ToLower() switch
-                                {
-                                    "pdf" => ("fa-solid fa-file-pdf", "text-red-500", "bg-red-50"),
-                                    "docx" => ("fa-solid fa-file-word", "text-blue-500", "bg-blue-50"),
-                                    "doc" => ("fa-solid fa-file-word", "text-blue-500", "bg-blue-50"),
-                                    "xlsx" => ("fa-solid fa-file-excel", "text-emerald-500", "bg-emerald-50"),
-                                    "xls" => ("fa-solid fa-file-excel", "text-emerald-500", "bg-emerald-50"),
-                                    "pptx" => ("fa-solid fa-file-powerpoint", "text-orange-500", "bg-orange-50"),
-                                    _ => ("fa-solid fa-file", "text-gray-400", "bg-gray-50")
-                                };
-
-                                <li data-filename="@file.FileName.ToLower() @file.FileType.ToLower() @file.Description?.ToLower()">
-
-                                    <!-- Latest version row -->
-                                    <div class="file-row flex items-center gap-4 px-5 py-3.5 hover:bg-[#F8F9FF] transition group">
-
-                                        <!-- File type icon -->
-                                        <div class="w-10 h-10 rounded-lg @iconBg flex items-center justify-center flex-shrink-0">
-                                            <i class="@iconClass @iconColor text-base"></i>
-                                        </div>
-
-                                        <!-- File info -->
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <p class="text-sm font-semibold text-[#1B2A6B] truncate">
-                                                    @(file.OriginalFileName ?? file.FileName)
-                                                </p>
-                                                @if (file.Version > 1)
-                                                {
-                                                    <span class="text-[9px] font-bold bg-[#EEF2FF] text-[#1B2A6B] px-1.5 py-0.5 rounded">
-                                                        Newer Version
-                                                    </span>
-                                                }
-                                                @if (group.History.Any())
-                                                {
-                                                    <button type="button"
-                                                            onclick="toggleHistory('history-@file.Id')"
-                                                            class="text-[9px] text-[#1B2A6B]/50 hover:text-[#1B2A6B] underline underline-offset-2 flex-shrink-0 transition">
-                                                        @group.History.Count older version(s)
-                                                    </button>
-                                                }
-                                            </div>
-
-                                            @if (!string.IsNullOrEmpty(file.Description))
-                                            {
-                                                <p class="text-[11px] text-gray-400 mt-0.5 truncate">@file.Description</p>
-                                            }
-
-                                            <div class="flex items-center gap-3 mt-1 flex-wrap">
-                                                
-                                                <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                                                    <i class="fa-solid fa-calendar text-[8px]"></i>@file.UploadedDateFormatted
-                                                </span>
-                                                @if (!string.IsNullOrEmpty(file.FileSize))
-                                                {
-                                                    <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                                                        <i class="fa-solid fa-database text-[8px]"></i>@file.FileSize
-                                                    </span>
-                                                }
-                                            </div>
-                                        </div>
-
-                                        <!-- Type badge -->
-                                        <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 flex-shrink-0 font-mono">
-                                            @file.FileType
-                                        </span>
-
-                                        <!-- Action buttons (visible on hover) -->
-                                        <div class="file-actions flex items-center gap-1 flex-shrink-0">
-
-                                            <a href="@file.FileUrl" download
-                                               class="action-btn" title="Download">
-                                                <i class="fa-solid fa-download text-xs"></i>
-                                            </a>
-
-                                            <button type="button"
-                                                    onclick="openPreview('@file.FileUrl', '@file.FileName', '@file.FileType')"
-                                                    class="action-btn" title="Preview">
-                                                <i class="fa-solid fa-eye text-xs"></i>
-                                            </button>
-
-                                                @if (User.IsInRole("Admin") || User.IsInRole("User"))
-                                                {
-                                                    <form method="post" action="/Home/DeleteFile" style="display:contents;">
-                                                        <input type="hidden" name="fileId" value="@file.Id" />
-                                                        <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
-                                                        <button type="submit"
-                                                        onclick="return confirm('Delete this version?')"
-                                                        class="action-btn danger" title="Delete">
-                                                            <i class="fa-solid fa-trash text-xs"></i>
-                                                        </button>
-                                                    </form>
-                                                }
-
-                                            </div>
-                                    </div>
-
-                                    <!-- Version history -->
-                                    @if (group.History.Any())
+                                <ul id="file-list" class="divide-y divide-gray-50">
+                                    @foreach (var group in fileGroups)
                                     {
-                                        <div id="history-@file.Id" style="display:none;" class="bg-[#FAFBFF]">
-                                            @foreach (var old in group.History)
-                                            {
-                                                <div class="version-row flex items-center gap-4 px-5 py-3 ml-5">
-                                                    <div class="w-8 h-8 rounded-lg @iconBg flex items-center justify-center flex-shrink-0">
-                                                        <i class="@iconClass @iconColor text-xs"></i>
-                                                    </div>
-                                                    <div class="flex-1 min-w-0">
-                                                        <div class="flex items-center gap-2">
-                                                            <p class="text-xs text-gray-500 truncate">
-                                                                @(old.OriginalFileName ?? old.FileName)
-                                                            </p>
-                                                            <span class="text-[9px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-mono">
-                                                                Old Version
-                                                            </span>
-                                                        </div>
-                                                        <p class="text-[10px] text-gray-400 mt-0.5">
-                                                            @old.UploadedDateFormatted · @old.FileSize
+                                        var file = group.Latest;
+                                        var (iconClass, iconColor, iconBg) = file.FileType.ToLower() switch
+                                        {
+                                            "pdf" => ("fa-solid fa-file-pdf", "text-red-500", "bg-red-50"),
+                                            "docx" => ("fa-solid fa-file-word", "text-blue-500", "bg-blue-50"),
+                                            "doc" => ("fa-solid fa-file-word", "text-blue-500", "bg-blue-50"),
+                                            "xlsx" => ("fa-solid fa-file-excel", "text-emerald-500", "bg-emerald-50"),
+                                            "xls" => ("fa-solid fa-file-excel", "text-emerald-500", "bg-emerald-50"),
+                                            "pptx" => ("fa-solid fa-file-powerpoint", "text-orange-500", "bg-orange-50"),
+                                            _ => ("fa-solid fa-file", "text-gray-400", "bg-gray-50")
+                                        };
+
+                                        <li data-filename="@file.FileName.ToLower() @file.FileType.ToLower() @file.Description?.ToLower()">
+
+                                            <!-- Latest version row -->
+                                            <div class="file-row flex items-center gap-4 px-5 py-3.5 hover:bg-[#F8F9FF] transition group">
+
+                                                <!-- File type icon -->
+                                                <div class="w-10 h-10 rounded-lg @iconBg flex items-center justify-center flex-shrink-0">
+                                                    <i class="@iconClass @iconColor text-base"></i>
+                                                </div>
+
+                                                <!-- File info -->
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <p class="text-sm font-semibold text-[#1B2A6B] truncate">
+                                                            @(file.OriginalFileName ?? file.FileName)
                                                         </p>
+                                                        @if (file.Version > 1)
+                                                        {
+                                                            <span class="text-[9px] font-bold bg-[#EEF2FF] text-[#1B2A6B] px-1.5 py-0.5 rounded">
+                                                                Newer Version
+                                                            </span>
+                                                        }
+                                                        @if (group.History.Any())
+                                                        {
+                                                            <button type="button"
+                                                                    onclick="toggleHistory('history-@file.Id')"
+                                                                    class="text-[9px] text-[#1B2A6B]/50 hover:text-[#1B2A6B] underline underline-offset-2 flex-shrink-0 transition">
+                                                                @group.History.Count older version(s)
+                                                            </button>
+                                                        }
                                                     </div>
-                                                    <a href="@old.FileUrl" download
+
+                                                    @if (!string.IsNullOrEmpty(file.Description))
+                                                    {
+                                                        <p class="text-[11px] text-gray-400 mt-0.5 truncate">@file.Description</p>
+                                                    }
+
+                                                    <div class="flex items-center gap-3 mt-1 flex-wrap">
+
+                                                        <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                                            <i class="fa-solid fa-calendar text-[8px]"></i>@file.UploadedDateFormatted
+                                                        </span>
+                                                        @if (!string.IsNullOrEmpty(file.FileSize))
+                                                        {
+                                                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                                                <i class="fa-solid fa-database text-[8px]"></i>@file.FileSize
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <!-- Type badge -->
+                                                <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 flex-shrink-0 font-mono">
+                                                    @file.FileType
+                                                </span>
+
+                                                <!-- Action buttons (visible on hover) -->
+                                                <div class="file-actions flex items-center gap-1 flex-shrink-0">
+
+                                                    <a href="@file.FileUrl" download
                                                        class="action-btn" title="Download">
                                                         <i class="fa-solid fa-download text-xs"></i>
                                                     </a>
+
+                                                    <button type="button"
+                                                            onclick="openPreview('@file.FileUrl', '@file.FileName', '@file.FileType')"
+                                                            class="action-btn" title="Preview">
+                                                        <i class="fa-solid fa-eye text-xs"></i>
+                                                    </button>
+
+                                                    @if (User.IsInRole("Admin") || User.IsInRole("User"))
+                                                    {
                                                         <form method="post" action="/Home/DeleteFile" style="display:contents;">
-                                                            <input type="hidden" name="fileId" value="@old.Id" />
+                                                            <input type="hidden" name="fileId" value="@file.Id" />
                                                             <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
                                                             <button type="submit"
                                                                     onclick="return confirm('Delete this version?')"
@@ -413,128 +367,252 @@
                                                                 <i class="fa-solid fa-trash text-xs"></i>
                                                             </button>
                                                         </form>
+                                                    }
+
+                                                </div>
+                                            </div>
+
+                                            <!-- Version history -->
+                                            @if (group.History.Any())
+                                            {
+                                                <div id="history-@file.Id" style="display:none;" class="bg-[#FAFBFF]">
+                                                    @foreach (var old in group.History)
+                                                    {
+                                                        <div class="version-row flex items-center gap-4 px-5 py-3 ml-5">
+                                                            <div class="w-8 h-8 rounded-lg @iconBg flex items-center justify-center flex-shrink-0">
+                                                                <i class="@iconClass @iconColor text-xs"></i>
+                                                            </div>
+                                                            <div class="flex-1 min-w-0">
+                                                                <div class="flex items-center gap-2">
+                                                                    <p class="text-xs text-gray-500 truncate">
+                                                                        @(old.OriginalFileName ?? old.FileName)
+                                                                    </p>
+                                                                    <span class="text-[9px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-mono">
+                                                                        Old Version
+                                                                    </span>
+                                                                </div>
+                                                                <p class="text-[10px] text-gray-400 mt-0.5">
+                                                                    @old.UploadedDateFormatted · @old.FileSize
+                                                                </p>
+                                                            </div>
+                                                            <a href="@old.FileUrl" download
+                                                               class="action-btn" title="Download">
+                                                                <i class="fa-solid fa-download text-xs"></i>
+                                                            </a>
+                                                            <form method="post" action="/Home/DeleteFile" style="display:contents;">
+                                                                <input type="hidden" name="fileId" value="@old.Id" />
+                                                                <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+                                                                <button type="submit"
+                                                                        onclick="return confirm('Delete this version?')"
+                                                                        class="action-btn danger" title="Delete">
+                                                                    <i class="fa-solid fa-trash text-xs"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    }
                                                 </div>
                                             }
-                                        </div>
+
+                                        </li>
                                     }
-
-                                </li>
+                                </ul>
                             }
-                        </ul>
-                    }
-                    else
-                    {
-                        <!-- Empty state with drag-drop hint -->
-                        <div class="px-8 py-16 flex flex-col items-center justify-center text-center">
-                            <div class="w-16 h-16 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mb-4">
-                                <i class="fa-solid fa-cloud-arrow-up text-[#1B2A6B] text-2xl"></i>
-                            </div>
-                            <p class="text-sm font-semibold text-[#1B2A6B] mb-1">No files yet</p>
-                            <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
-                                Supports PDF, DOCX, XLSX.
-                            </p>
-                            <div class="mt-5 flex items-center gap-2 text-[10px] text-gray-300">
-                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">PDF</span>
-                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">DOCX</span>
-                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">XLSX</span>
-                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">PPTX</span>
-                            </div>
-                        </div>
-                    }
-                    </div>
-
-                </div>
-
-                <!-- COMMENTS -->
-                <div class="mt-6 bg-white rounded-xl card shadow-sm overflow-hidden">
-
-                    <div class="px-5 py-3.5 flex items-center justify-between"
-                         style="border-bottom: 1px solid #F0F1F5; border-top: 3px solid #1B2A6B;">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-comments text-[#1B2A6B] text-sm"></i>
-                            <p class="text-sm font-semibold text-[#1B2A6B]">Comments</p>
-                        </div>
-                        <span class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2.5 py-1 rounded-full">
-                            @Model.Comments.Count
-                        </span>
-                    </div>
-
-                    <!-- Add comment -->
-                    @if (SignInManager.IsSignedIn(User))
-                    {
-                        <form method="post" action="/Home/AddComment" class="p-5" style="border-bottom: 1px solid #F0F1F5;">
-                            <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
-                            <textarea name="content"
-                                  maxlength="500"
-                                  rows="2"
-                                  placeholder="Write a comment..."
-                                  required
-                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none transition"
-                                  style="background: #FAFBFF;"></textarea>
-                            <div class="flex justify-end mt-2">
-                                <button type="submit"
-                                        class="text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
-                                        style="background: #1B2A6B;">
-                                    <i class="fa-solid fa-paper-plane mr-1.5"></i> Post
-                                </button>
-                            </div>
-                        </form>
-                    }
-                    else
-                    {
-                        <div class="px-5 py-4 text-xs text-gray-400">
-                            <a href="/Account/Login?returnUrl=/Home/Module?id=@Model.ModuleSlug"
-                               class="text-[#1B2A6B] underline underline-offset-2">Sign in</a> to leave a comment.
-                        </div>
-                    }
-
-                    <!-- Comment list -->
-                    @if (Model.Comments.Any())
-                    {
-                        <ul class="divide-y divide-gray-50">
-                            @foreach (var comment in Model.Comments)
+                            else
                             {
-                                <li class="px-5 py-4 flex gap-3">
-                                    <!-- Avatar -->
-                                    <div class="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
-                                        <span class="text-[11px] font-bold text-[#1B2A6B]">
-                                            @comment.UserEmail[0].ToString().ToUpper()
-                                        </span>
+                                <!-- Empty state with drag-drop hint -->
+                                <div class="px-8 py-16 flex flex-col items-center justify-center text-center">
+                                    <div class="w-16 h-16 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mb-4">
+                                        <i class="fa-solid fa-cloud-arrow-up text-[#1B2A6B] text-2xl"></i>
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <p class="text-xs font-semibold text-[#1B2A6B]">@comment.UserEmail</p>
-                                            <span class="text-[10px] text-gray-300">
-                                                @comment.CreatedAt.ToString("MMM dd, yyyy · h:mm tt")
+                                    <p class="text-sm font-semibold text-[#1B2A6B] mb-1">No files yet</p>
+                                    <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+                                        Supports PDF, DOCX, XLSX.
+                                    </p>
+                                    <div class="mt-5 flex items-center gap-2 text-[10px] text-gray-300">
+                                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">PDF</span>
+                                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">DOCX</span>
+                                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">XLSX</span>
+                                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-400 font-mono font-bold">PPTX</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+                    <!-- COMMENTS -->
+                    <div class="mt-6 bg-white rounded-xl card shadow-sm overflow-hidden">
+
+                        <div class="px-5 py-3.5 flex items-center justify-between"
+                             style="border-bottom: 1px solid #F0F1F5; border-top: 3px solid #1B2A6B;">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-comments text-[#1B2A6B] text-sm"></i>
+                                <p class="text-sm font-semibold text-[#1B2A6B]">Comments</p>
+                            </div>
+                            <span class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2.5 py-1 rounded-full">
+                                @Model.Comments.Count
+                            </span>
+                        </div>
+
+                        <!-- Add comment -->
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <form method="post" action="/Home/AddComment" class="p-5" style="border-bottom: 1px solid #F0F1F5;">
+                                <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+                                <textarea name="content"
+                                      maxlength="500"
+                                      rows="2"
+                                      placeholder="Write a comment..."
+                                      required
+                                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none transition"
+                                      style="background: #FAFBFF;"></textarea>
+                                <div class="flex justify-end mt-2">
+                                    <button type="submit"
+                                            class="text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+                                            style="background: #1B2A6B;">
+                                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Post
+                                    </button>
+                                </div>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="px-5 py-4 text-xs text-gray-400">
+                                <a href="/Account/Login?returnUrl=/Home/Module?id=@Model.ModuleSlug"
+                                   class="text-[#1B2A6B] underline underline-offset-2">Sign in</a> to leave a comment.
+                            </div>
+                        }
+
+                        <!-- Comment list -->
+                        @if (Model.Comments.Any())
+                        {
+                            <ul class="divide-y divide-gray-50">
+
+                                @foreach (var comment in Model.Comments)
+                                {
+                                    var guestSuffix = comment.UserId.Replace("guest-", "");
+                                    var displayName = comment.UserId.StartsWith("guest-")
+                                    ? "Guest#" + (guestSuffix.Length > 0 ? guestSuffix.Substring(0, Math.Min(4, guestSuffix.Length)).ToUpper() : "????")
+                                    : comment.UserEmail;
+
+                                    var avatarLetter = displayName[0].ToString().ToUpper();
+                                    var guestId = Context.Session.GetString("GuestId");
+                                    var isOwner = comment.UserId == UserManager.GetUserId(User) ||
+                                                 (guestId != null && comment.UserId == $"guest-{guestId}");
+
+                                    <li class="comment-item px-5 py-4 flex gap-3 group hover:bg-[#F8F9FF] transition-colors"
+                                        id="comment-item-@comment.Id">
+
+                                        <!-- Avatar -->
+                                        <div class="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span class="text-[11px] font-bold text-[#1B2A6B]">
+                                                @avatarLetter.ToString().ToUpper()
                                             </span>
                                         </div>
-                                        <p class="text-sm text-gray-600 mt-1 leading-relaxed">@comment.Content</p>
-                                    </div>
-                                    <!-- Delete — admin or own comment -->
-                                    @if (User.IsInRole("Admin") || UserManager.GetUserId(User) == comment.UserId)
-                                    {
-                                        <form method="post" action="/Home/DeleteComment" style="display:contents;">
-                                            <input type="hidden" name="commentId" value="@comment.Id" />
-                                            <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
-                                            <button type="submit"
-                                                    onclick="return confirm('Delete this comment?')"
-                                                    class="action-btn danger flex-shrink-0 self-start mt-0.5" title="Delete">
-                                                <i class="fa-solid fa-trash text-xs"></i>
-                                            </button>
-                                        </form>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <div class="px-5 py-10 text-center text-gray-400 text-xs">
-                            No comments yet. Be the first!
-                        </div>
-                    }
 
-                </div>
+                                        <div class="flex-1 min-w-0">
+
+                                            <!-- Meta row: author LEFT, timestamp RIGHT -->
+                                            <div class="flex items-center justify-between gap-2">
+                                                <p class="text-xs font-semibold text-[#1B2A6B] truncate">@displayName</p>
+                                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                                    @if (comment.IsEdited)
+                                                    {
+                                                        <span id="edited-badge-@comment.Id"
+                                                              class="text-[9px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-semibold">
+                                                            edited
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span id="edited-badge-@comment.Id"
+                                                              class="text-[9px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-semibold hidden">
+                                                            edited
+                                                        </span>
+                                                    }
+                                                    <span id="comment-time-@comment.Id"
+                                                          class="text-[10px] text-[#1B2A6B]/40 whitespace-nowrap">
+                                                        @comment.CreatedAt.ToString("MMM dd, yyyy · h:mm tt")
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Comment text (hidden while editing) -->
+                                            <p id="comment-text-@comment.Id"
+                                               class="text-sm text-gray-600 mt-1 leading-relaxed">
+                                                @comment.Content
+                                            </p>
+
+                                            <!-- Inline edit area (hidden by default) -->
+                                            <div id="inline-edit-@comment.Id" class="hidden mt-2">
+                                                <textarea id="inline-ta-@comment.Id"
+                                                  maxlength="500"
+                                                  rows="3"
+                                                  class="w-full border border-[#1B2A6B] rounded-lg px-3 py-2 text-sm text-gray-700 resize-none transition"
+                                                  style="background:#FAFBFF; box-shadow: 0 0 0 3px rgba(27,42,107,0.08);"></textarea>
+                                                <div class="flex items-center justify-between mt-1.5">
+                                                    <span class="text-[10px] text-gray-400">
+                                                        <span id="inline-cc-@comment.Id">0</span>/500
+                                                    </span>
+                                                    <div class="flex gap-2">
+                                                        <button type="button"
+                                                                onclick="cancelInlineEdit(@comment.Id)"
+                                                                class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                                                            Cancel
+                                                        </button>
+                                                        <!-- Posts to your existing EditComment action -->
+                                                        <form method="post" action="/Home/EditComment" style="display:contents;" id="inline-form-@comment.Id">
+                                                            <input type="hidden" name="commentId" value="@comment.Id" />
+                                                            <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+                                                            <input type="hidden" id="inline-hidden-@comment.Id" name="content" />
+                                                            <button type="button"
+                                                                    onclick="submitInlineEdit(@comment.Id)"
+                                                                    class="text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                                                                    style="background: #1B2A6B;">
+                                                                Save
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Action buttons -->
+                                        @if (isOwner || User.IsInRole("Admin"))
+                                        {
+                                            <div class="flex items-center gap-1 flex-shrink-0 self-start mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                 id="comment-actions-@comment.Id">
+                                                <button type="button"
+                                                        onclick="startInlineEdit(@comment.Id, '@Html.Raw(comment.Content.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "\\n"))')"
+                                                        class="action-btn" title="Edit">
+                                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                                </button>
+                                                <form method="post" action="/Home/DeleteComment" style="display:contents;">
+                                                    <input type="hidden" name="commentId" value="@comment.Id" />
+                                                    <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+                                                    <button type="submit"
+                                                            onclick="return confirm('Delete this comment?')"
+                                                            class="action-btn danger" title="Delete">
+                                                        <i class="fa-solid fa-trash text-xs"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+
+                                    </li>
+                                                        
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="px-5 py-10 text-center text-gray-400 text-xs">
+                                No comments yet. Be the first!
+                            </div>
+                        }
+
+                    </div>
                 </div>
                 <!-- RIGHT: UPLOAD + TRASH -->
                 <div class="w-72 flex-shrink-0 flex flex-col gap-4 sticky top-7 self-start">
@@ -554,12 +632,8 @@
 
                                 <!-- Dropzone -->
                                 <div id="dropzone"
-                                class="relative flex flex-col items-center justify-center rounded-xl p-6 text-center transition-all"
-                                style="border: 2px dashed #CBD5E1; background: #F8F9FF; cursor: pointer;"
-                                onclick="document.getElementById('file-input').click()"
-                                ondragover="event.preventDefault(); this.classList.add('dropzone-active')"
-                                ondragleave="this.classList.remove('dropzone-active')"
-                                ondrop="handleDrop(event)">
+                                     class="relative flex flex-col items-center justify-center rounded-xl p-6 text-center transition-all"
+                                     style="border: 2px dashed #CBD5E1; background: #F8F9FF; cursor: pointer;">
 
                                     <div class="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center mb-2">
                                         <i class="fa-solid fa-cloud-arrow-up text-[#1B2A6B] text-lg"></i>
@@ -570,24 +644,24 @@
                                     <p class="text-[10px] text-gray-300 mt-2">Supports PDF, DOCX, XLSX</p>
 
                                     <input type="file"
-                                    name="file"
-                                    id="file-input"
-                                    class="hidden"
-                                    accept=".pdf,.docx,.xlsx,.pptx"
-                                    onchange="onFileSelected(this)" />
+                                           name="file"
+                                           id="file-input"
+                                           class="hidden"
+                                           accept=".pdf,.docx,.xlsx,.pptx"
+                                           onchange="onFileSelected(this)" />
                                 </div>
 
                                 <!-- File preview -->
                                 <div id="file-info"
-                                class="hidden mt-3 rounded-lg p-3 flex items-center gap-3"
-                                style="background: #F5F6FA; border: 1px solid #E8EAF0;">
+                                     class="hidden mt-3 rounded-lg p-3 flex items-center gap-3"
+                                     style="background: #F5F6FA; border: 1px solid #E8EAF0;">
                                     <i id="file-info-icon" class="fa-solid fa-file text-gray-400 text-lg flex-shrink-0"></i>
                                     <div class="min-w-0">
                                         <p id="file-info-name" class="text-xs font-semibold text-[#1B2A6B] truncate"></p>
                                         <p id="file-info-size" class="text-[10px] text-gray-400 mt-0.5"></p>
                                     </div>
                                     <button type="button" onclick="clearFile()"
-                                    class="ml-auto text-gray-300 hover:text-red-400 transition flex-shrink-0">
+                                            class="ml-auto text-gray-300 hover:text-red-400 transition flex-shrink-0">
                                         <i class="fa-solid fa-xmark text-xs"></i>
                                     </button>
                                 </div>
@@ -598,13 +672,13 @@
                                         Description <span class="text-gray-300 font-normal">(optional)</span>
                                     </label>
                                     <textarea name="description"
-                                    id="desc-textarea"
-                                    maxlength="200"
-                                    rows="3"
-                                    oninput="updateCounter(this)"
-                                    placeholder="What is this file about?"
-                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 resize-none transition"
-                                    style="background: #FAFBFF;"></textarea>
+                                          id="desc-textarea"
+                                          maxlength="200"
+                                          rows="3"
+                                          oninput="updateCounter(this)"
+                                          placeholder="What is this file about?"
+                                          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 resize-none transition"
+                                          style="background: #FAFBFF;"></textarea>
                                     <div class="text-[10px] text-gray-400 text-right mt-0.5">
                                         <span id="char-count">0</span>/200
                                     </div>
@@ -612,10 +686,10 @@
 
                                 <!-- Upload button — disabled until file selected -->
                                 <button id="upload-btn"
-                                type="submit"
-                                disabled
-                                class="w-full mt-3 text-white text-xs font-semibold py-2.5 rounded-lg transition"
-                                style="background: #CBD5E1;">
+                                        type="submit"
+                                        disabled
+                                        class="w-full mt-3 text-white text-xs font-semibold py-2.5 rounded-lg transition"
+                                        style="background: #CBD5E1;">
                                     <i class="fa-solid fa-upload mr-1.5"></i> Upload
                                 </button>
 
@@ -625,7 +699,58 @@
 
 
                 </div>
-              
+
+            </div>
+        </div>
+        <!-- EDIT COMMENT MODAL -->
+        <div id="edit-comment-modal"
+             class="fixed inset-0 z-50 items-center justify-center"
+             style="background: rgba(8,10,20,0.75); display:none; backdrop-filter: blur(4px);">
+
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+                 style="border: 1px solid #E8EAF0;">
+
+                <div class="px-5 py-4 flex items-center justify-between"
+                     style="border-bottom: 1px solid #F0F1F5; border-top: 3px solid #1B2A6B;">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-[#1B2A6B] text-sm"></i>
+                        <p class="text-sm font-semibold text-[#1B2A6B]">Edit comment</p>
+                    </div>
+                    <button onclick="closeEditModal()"
+                            class="action-btn">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+
+                <form method="post" action="/Home/EditComment" class="p-5">
+                    <input type="hidden" id="edit-comment-id" name="commentId" />
+                    <input type="hidden" name="moduleId" value="@Model.ModuleSlug" />
+                    <textarea id="edit-comment-content"
+                              name="content"
+                              maxlength="500"
+                              rows="4"
+                              required
+                              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none transition"
+                              style="background: #FAFBFF;"></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-[10px] text-gray-400">
+                            <span id="edit-char-count">0</span>/500
+                        </span>
+                        <div class="flex gap-2">
+                            <button type="button"
+                                    onclick="closeEditModal()"
+                                    class="text-xs font-semibold px-4 py-2 rounded-lg transition border border-gray-200 text-gray-500 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+                                    style="background: #1B2A6B;">
+                                Save changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
@@ -859,7 +984,7 @@
         if (empty) empty.style.display = visible === 0 && query !== '' ? 'block' : 'none';
     }
 
-        async function toggleLike() {
+    async function toggleLike() {
         const btn   = document.getElementById('like-btn');
         const count = document.getElementById('like-count');
         const icon  = btn.querySelector('i');
@@ -878,5 +1003,91 @@
         btn.style.background = data.liked ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)';
         btn.style.borderColor = data.liked ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.12)';
         btn.style.color       = data.liked ? '#f87171' : 'rgba(255,255,255,0.5)';
+    }
+
+    /* ─── COMMENT EDITING ─── */
+        function editComment(commentId, content) {
+        document.getElementById('edit-comment-id').value = commentId;
+        document.getElementById('edit-comment-content').value = content;
+        document.getElementById('edit-char-count').textContent = content.length;
+        document.getElementById('edit-comment-modal').style.display = 'flex'; // ← must be flex
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-comment-modal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('edit-comment-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('edit-comment-modal').style.display === 'flex') {
+            closeEditModal();
+        }
+    });
+
+    // Update char count in edit modal
+    document.getElementById('edit-comment-content')?.addEventListener('input', function() {
+        document.getElementById('edit-char-count').textContent = this.value.length;
+    });
+
+    /* ─── DROPZONE EVENT HANDLERS ─── */
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropzone = document.getElementById('dropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', function() {
+                document.getElementById('file-input').click();
+            });
+
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dropzone-active');
+            });
+
+            dropzone.addEventListener('dragleave', function() {
+                this.classList.remove('dropzone-active');
+            });
+
+            dropzone.addEventListener('drop', function(e) {
+                handleDrop(e);
+            });
+        }
+    });
+
+    function startInlineEdit(id, content) {
+        const ta = document.getElementById('inline-ta-' + id);
+        ta.value = content;
+        document.getElementById('inline-cc-' + id).textContent = content.length;
+
+        // Hide text, show editor, hide action buttons
+        document.getElementById('comment-text-' + id).classList.add('hidden');
+        document.getElementById('inline-edit-' + id).classList.remove('hidden');
+        document.getElementById('comment-actions-' + id)?.classList.add('!opacity-0', 'pointer-events-none');
+        document.getElementById('comment-item-' + id).classList.add('bg-[#F8F9FF]');
+
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+
+        ta.oninput = function() {
+            document.getElementById('inline-cc-' + id).textContent = this.value.length;
+        };
+    }
+
+    function cancelInlineEdit(id) {
+        document.getElementById('comment-text-' + id).classList.remove('hidden');
+        document.getElementById('inline-edit-' + id).classList.add('hidden');
+        document.getElementById('comment-actions-' + id)?.classList.remove('!opacity-0', 'pointer-events-none');
+        document.getElementById('comment-item-' + id).classList.remove('bg-[#F8F9FF]');
+    }
+
+    function submitInlineEdit(id) {
+        const content = document.getElementById('inline-ta-' + id).value.trim();
+        if (!content) return;
+        // Sync content into the hidden input then submit
+        document.getElementById('inline-hidden-' + id).value = content;
+        document.getElementById('inline-form-' + id).submit();
     }
 </script>

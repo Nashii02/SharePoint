@@ -72,5 +72,18 @@
         public string Content { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public bool IsDeleted { get; set; } = false;
+        public DateTime? EditedAt { get; set; }
+        public bool IsEdited => EditedAt.HasValue;
+    }
+
+    public class GuestUser
+    {
+        public int Id { get; set; }
+        public string Nickname { get; set; } = "";
+        public string SessionId { get; set; } = "";  // Track guests across session
+        public DateTime CreatedAt { get; set; }
+        public bool IsBanned { get; set; } = false;
+        public DateTime? BannedAt { get; set; }
+        public string? BannedReason { get; set; }
     }
 }

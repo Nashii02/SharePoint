@@ -35,9 +35,6 @@
 
 @{
     var currentUserId = UserManager.GetUserId(User);
-    // Filter out Guest from display
-    var displayUsers = Model.Users.Where(u => u.Role != "Guest").ToList();
-    var displayRoles = Model.AllRoles.Where(r => r != "Guest").ToList();
 }
 
 <div class="min-h-screen flex flex-col bg-[#F4F6FB]">
@@ -108,18 +105,19 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-gray-400">Total Users</p>
-                        <p class="text-lg font-bold text-[#1B2A6B]">@displayUsers.Count</p>
+                        <p class="text-lg font-bold text-[#1B2A6B]">@Model.Users.Count</p>
                     </div>
                 </div>
 
-                @foreach (var role in displayRoles)
+                @foreach (var role in Model.AllRoles)
                 {
-                    var count = displayUsers.Count(u => u.Role == role);
+                    var count = Model.Users.Count(u => u.Role == role);
                     var (bg, text, icon) = role switch
                     {
                         "Admin" => ("bg-[#EEF2FF]", "text-[#1B2A6B]", "fa-solid fa-user-shield"),
                         "Quality Assurance" => ("bg-purple-50", "text-purple-700", "fa-solid fa-user-check"),
                         "User" => ("bg-sky-50", "text-sky-700", "fa-solid fa-user"),
+                        "Guest" => ("bg-amber-50", "text-amber-700", "fa-solid fa-user-secret"),
                         _ => ("bg-gray-50", "text-gray-500", "fa-solid fa-user")
                     };
                     <div class="bg-white rounded-xl px-4 py-3 flex items-center gap-3"
@@ -142,7 +140,7 @@
                 <div class="bg-white rounded-xl px-4 py-3 flex items-center gap-2"
                      style="border: 1px solid #E8EAF0; min-width: 260px;">
                     <i class="fa-solid fa-magnifying-glass text-gray-300 text-xs"></i>
-                    <input type="text" id="user-search" placeholder="Search by email..."
+                    <input type="text" id="user-search" placeholder="Search by email or name..."
                            oninput="filterUsers()"
                            class="text-xs bg-transparent flex-1 text-gray-600" style="outline:none;" />
                 </div>
@@ -156,7 +154,7 @@
                         All
                     </button>
 
-                    @foreach (var role in displayRoles)
+                    @foreach (var role in Model.AllRoles)
                     {
                         <button type="button"
                                 onclick="setFilter('@role.ToLower()')"
@@ -179,21 +177,21 @@
                     </div>
                     <span id="user-count"
                           class="text-[10px] font-semibold bg-[#EEF2FF] text-[#1B2A6B] px-2.5 py-1 rounded-full">
-                        @displayUsers.Count user(s)
+                        @Model.Users.Count user(s)
                     </span>
                 </div>
 
-                @if (displayUsers.Any())
+                @if (Model.Users.Any())
                 {
                     <div class="grid grid-cols-12 px-5 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest"
                          style="background: #FAFBFF; border-bottom: 1px solid #F0F1F5;">
-                        <div class="col-span-5">Email</div>
+                        <div class="col-span-5">Name / Email</div>
                         <div class="col-span-4">Role</div>
                         <div class="col-span-3 text-right">Actions</div>
                     </div>
 
                     <ul id="user-list" class="divide-y divide-gray-50">
-                        @foreach (var user in displayUsers)
+                        @foreach (var user in Model.Users)
                         {
                             var isSelf = user.Id == currentUserId;
                             var (roleBg, roleText) = user.Role switch
@@ -201,25 +199,33 @@
                                 "Admin" => ("bg-[#EEF2FF]", "text-[#1B2A6B]"),
                                 "Quality Assurance" => ("bg-purple-50", "text-purple-700"),
                                 "User" => ("bg-sky-50", "text-sky-700"),
+                                "Guest" => ("bg-amber-50", "text-amber-700"),
                                 _ => ("bg-gray-100", "text-gray-400")
                             };
 
                             <li class="user-row grid grid-cols-12 items-center px-5 py-3.5 hover:bg-[#F8F9FF] transition"
                                 data-email="@user.Email.ToLower()"
+                                data-name="@user.DisplayName.ToLower()"
                                 data-role="@user.Role.ToLower()">
 
-                                <!-- Email -->
+                                <!-- Email / Name -->
                                 <div class="col-span-5 flex items-center gap-3 min-w-0">
                                     <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                                         style="background: @(isSelf ? "#1B2A6B" : "#EEF2FF");">
-                                        <i class="fa-solid fa-user text-xs"
-                                           style="color: @(isSelf ? "white" : "#1B2A6B");"></i>
+                                         style="background: @(isSelf ? "#1B2A6B" : user.IsGuest ? "#FCD34D" : "#EEF2FF");">
+                                        <i class="fa-solid fa-@(user.IsGuest ? "user-secret" : "user") text-xs"
+                                           style="color: @(isSelf ? "white" : user.IsGuest ? "#B45309" : "#1B2A6B");"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm font-semibold text-[#1B2A6B] truncate">@user.Email</p>
+                                        <p class="text-sm font-semibold text-[#1B2A6B] truncate">@user.DisplayName</p>
                                         @if (isSelf)
                                         {
                                             <p class="text-[10px] text-gray-400">You</p>
+                                        }
+                                        @if (user.IsGuest && user.IsBanned)
+                                        {
+                                            <p class="text-[10px] text-red-500 font-semibold">
+                                                <i class="fa-solid fa-ban text-[8px]"></i> Banned
+                                            </p>
                                         }
                                     </div>
                                 </div>
@@ -237,8 +243,38 @@
                                     {
                                         <span class="text-[10px] text-gray-300 italic">Cannot edit own account</span>
                                     }
+                                    else if (user.IsGuest)
+                                    {
+                                        <!-- Guests cannot change role, only delete or ban -->
+                                        @if (!user.IsBanned)
+                                        {
+                                            <form method="post" action="/Account/BanGuest" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="guestId" value="@(int.Parse(user.Id.Replace("guest-", "")))" />
+                                                <input type="hidden" name="reason" value="Banned by admin" />
+                                                <button type="submit"
+                                                        onclick="return confirm('Ban @user.DisplayName from commenting?')"
+                                                        class="w-7 h-7 rounded-lg bg-yellow-50 hover:bg-yellow-100 flex items-center justify-center transition"
+                                                        title="Ban guest">
+                                                    <i class="fa-solid fa-ban text-yellow-600 text-[10px]"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <form method="post" action="/Account/DeleteUser" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            <button type="submit"
+                                                    onclick="return confirm('Delete @user.DisplayName? This cannot be undone.')"
+                                                    class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center transition"
+                                                    title="Delete user">
+                                                <i class="fa-solid fa-trash text-red-400 text-[10px]"></i>
+                                            </button>
+                                        </form>
+                                    }
                                     else
                                     {
+                                        <!-- Registered users can change role -->
                                         <form method="post" action="/Account/ChangeRole">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="userId" value="@user.Id" />
@@ -246,7 +282,7 @@
                                                     onchange="this.form.submit()"
                                                     class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 transition"
                                                     style="background:#FAFBFF;">
-                                                @foreach (var role in displayRoles)
+                                                @foreach (var role in Model.AllRoles.Where(r => r != "Guest"))
                                                 {
                                                     if (role == user.Role)
                                                     {
@@ -293,7 +329,7 @@
                             <i class="fa-solid fa-users text-[#1B2A6B] text-xl"></i>
                         </div>
                         <p class="text-sm font-semibold text-gray-500">No users yet</p>
-                        <p class="text-xs text-gray-400 mt-1">Users will appear here once they register.</p>
+                        <p class="text-xs text-gray-400 mt-1">Users will appear here once they register or continue as guests.</p>
                     </div>
                 }
             </div>
@@ -346,8 +382,9 @@
 
         rows.forEach(row => {
             const email    = row.getAttribute('data-email') || '';
+            const name     = row.getAttribute('data-name')  || '';
             const role     = row.getAttribute('data-role')  || '';
-            const matchSearch = email.includes(query);
+            const matchSearch = email.includes(query) || name.includes(query);
             const matchFilter = activeFilter === 'all' || role === activeFilter;
 
             const show = matchSearch && matchFilter;

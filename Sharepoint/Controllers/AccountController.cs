@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Sharepoint.Data;
 using Sharepoint.Models;
 using System.ComponentModel.DataAnnotations;
 
@@ -10,19 +11,22 @@ namespace Sharepoint.Controllers
     {
         private readonly SignInManager<IdentityUser> _signIn;
         private readonly UserManager<IdentityUser> _users;
-        private readonly RoleManager<IdentityRole> _roleManager; 
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IHttpContextAccessor _httpContext;
+        private readonly AppDbContext _context;
 
         public AccountController(
             SignInManager<IdentityUser> signIn,
             UserManager<IdentityUser> users,
             RoleManager<IdentityRole> roleManager,
-            IHttpContextAccessor httpContext)  
+            IHttpContextAccessor httpContext,
+            AppDbContext context)
         {
             _signIn = signIn;
             _users = users;
             _roleManager = roleManager;
             _httpContext = httpContext;
+            _context = context;
         }
 
         [HttpGet]
@@ -61,10 +65,57 @@ namespace Sharepoint.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> LoginAsGuest(GuestLoginViewModel model, string? returnUrl = null)
+        {
+            var sessionId = HttpContext.Session.Id ?? Guid.NewGuid().ToString();
+            HttpContext.Session.SetString("GuestSessionId", sessionId);
+
+            // Auto-generate nickname if not provided
+            string nickname = string.IsNullOrWhiteSpace(model.Nickname)
+                ? $"Guest{GenerateGuestNumber()}"
+                : model.Nickname.Trim();
+
+            var guest = new GuestUser
+            {
+                Nickname = nickname,
+                SessionId = sessionId,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.GuestUsers.Add(guest);
+            await _context.SaveChangesAsync();
+
+            // Create a synthetic claim for guest user
+            await _signIn.SignInAsync(new IdentityUser
+            {
+                Id = $"guest-{guest.Id}",
+                Email = nickname,
+                UserName = nickname
+            }, isPersistent: false);
+
+            HttpContext.Session.SetString("GuestId", guest.Id.ToString());
+            HttpContext.Session.SetString("GuestNickname", nickname);
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction("WorkInstruction", "Home");
+        }
+
+        private int GenerateGuestNumber()
+        {
+            var lastGuest = _context.GuestUsers
+                .OrderByDescending(g => g.Id)
+                .FirstOrDefault();
+            return lastGuest?.Id + 1 ?? 1;
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await _signIn.SignOutAsync();
-            return RedirectToAction("WorkInstruction", "Home");
+            HttpContext.Session.Remove("GuestId");
+            HttpContext.Session.Remove("GuestNickname");
+            return RedirectToAction("Login", "Account");
         }
 
         [HttpGet]
@@ -118,32 +169,52 @@ namespace Sharepoint.Controllers
         [HttpGet]
         public async Task<IActionResult> ManageUsers()
         {
-            var users = _users.Users.ToList();
+            var identityUsers = _users.Users.ToList();
+            var guestUsers = _context.GuestUsers.ToList();
             var allRoles = _roleManager.Roles.Select(r => r.Name!).ToList();
             var currentUserId = _users.GetUserId(User);
 
             var rows = new List<UserRow>();
-            foreach (var user in users)
+
+            // Add registered users
+            foreach (var user in identityUsers)
             {
                 var roles = await _users.GetRolesAsync(user);
                 rows.Add(new UserRow
                 {
                     Id = user.Id,
                     Email = user.Email ?? "",
-                    Role = roles.FirstOrDefault() ?? "No Role"
+                    DisplayName = user.Email ?? "",
+                    Role = roles.FirstOrDefault() ?? "No Role",
+                    IsGuest = false
                 });
             }
 
-            // Pin current admin to top, then sort rest by role then email
+            // Add guest users
+            foreach (var guest in guestUsers)
+            {
+                rows.Add(new UserRow
+                {
+                    Id = $"guest-{guest.Id}",
+                    Email = guest.Nickname,
+                    DisplayName = guest.Nickname,
+                    Role = "Guest",
+                    IsGuest = true,
+                    IsBanned = guest.IsBanned
+                });
+            }
+
+            // Sort: current admin first, then by role, then by name
             var sorted = rows
                 .OrderBy(u => u.Id == currentUserId ? 0 : 1)
                 .ThenBy(u => u.Role switch
                 {
                     "Admin" => 0,
                     "User" => 1,
-                    _ => 2
+                    "Guest" => 2,
+                    _ => 3
                 })
-                .ThenBy(u => u.Email)
+                .ThenBy(u => u.DisplayName)
                 .ToList();
 
             return View(new UserManagementViewModel
@@ -158,6 +229,12 @@ namespace Sharepoint.Controllers
         [HttpPost]
         public async Task<IActionResult> ChangeRole(string userId, string newRole)
         {
+            if (userId.StartsWith("guest-"))
+            {
+                // Cannot change guest role — they're always "Guest"
+                return RedirectToAction("ManageUsers");
+            }
+
             var user = await _users.FindByIdAsync(userId);
             if (user == null) return RedirectToAction("ManageUsers");
 
@@ -173,9 +250,40 @@ namespace Sharepoint.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteUser(string userId)
         {
-            var user = await _users.FindByIdAsync(userId);
-            if (user != null)
-                await _users.DeleteAsync(user);
+            if (userId.StartsWith("guest-"))
+            {
+                var guestId = int.Parse(userId.Replace("guest-", ""));
+                var guest = _context.GuestUsers.FirstOrDefault(g => g.Id == guestId);
+                if (guest != null)
+                {
+                    _context.GuestUsers.Remove(guest);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                var user = await _users.FindByIdAsync(userId);
+                if (user != null)
+                    await _users.DeleteAsync(user);
+            }
+
+            return RedirectToAction("ManageUsers");
+        }
+
+        // BAN GUEST — Admin only
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> BanGuest(int guestId, string? reason = null)
+        {
+            var guest = _context.GuestUsers.FirstOrDefault(g => g.Id == guestId);
+            if (guest != null)
+            {
+                guest.IsBanned = true;
+                guest.BannedAt = DateTime.Now;
+                guest.BannedReason = reason;
+                _context.GuestUsers.Update(guest);
+                await _context.SaveChangesAsync();
+            }
 
             return RedirectToAction("ManageUsers");
         }

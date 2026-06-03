@@ -165,7 +165,7 @@
                 <!-- Nav actions -->
                 <div class="flex items-center gap-3">
                     <!-- Global search -->
-                    <div class="flex items-center gap-2 rounded-lg px-3 py-2"
+                    <div class="stat-pill flex items-center gap-2 rounded-lg px-3 py-2"
                          style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); width: 220px;">
                         <i class="fa-solid fa-magnifying-glass text-white/40 text-xs"></i>
                         <input id="global-search"
@@ -185,7 +185,7 @@
                         <form method="post" asp-controller="Account" asp-action="Logout" style="display:inline;">
                             @Html.AntiForgeryToken()
                             <button type="submit"
-                                    class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                                    class="stat-pill flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
                                     style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
                                 <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
                                 Sign out
@@ -195,7 +195,7 @@
                     else
                     {
                         <a href="/Account/Login?returnUrl=/Home/WorkInstruction"
-                           class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                           class="stat-pill flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition"
                            style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);">
                             <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
                             Sign in
